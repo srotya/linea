@@ -30,14 +30,18 @@ import io.netty.util.internal.ConcurrentSet;
  */
 public class TestSpout extends Spout {
 
-	private static final int COUNT = 500000;
 	private static final long serialVersionUID = 1L;
 	private transient Collector collector;
 	private transient Set<Long> emittedEvents;
 	private transient int taskId;
 	private transient AtomicBoolean processed;
 	private int c;
+	private int messageCount;
 
+	public TestSpout(int messageCount) {
+		this.messageCount = messageCount;
+	}
+	
 	@Override
 	public void configure(Map<String, String> conf, int taskId, Collector collector) {
 		this.taskId = taskId;
@@ -55,7 +59,7 @@ public class TestSpout extends Spout {
 	public void ready() {
 		System.out.println("Running spout:" + taskId);
 		long timestamp = System.currentTimeMillis();
-		for (int i = 0; i < COUNT; i++) {
+		for (int i = 0; i < messageCount; i++) {
 			Event event = collector.getFactory().buildEvent(taskId + "_" + i);
 			event.getHeaders().put("uuid", taskId + "host" + i);
 			emittedEvents.add(event.getEventId());
@@ -70,7 +74,7 @@ public class TestSpout extends Spout {
 		timestamp = System.currentTimeMillis();
 		while (true) {
 			if (emittedEvents.size() == 0) {
-				System.out.println("Completed processing " + COUNT + " events" + "\ttaskid:" + taskId);
+				System.out.println("Completed processing " + messageCount + " events" + "\ttaskid:" + taskId);
 				timestamp = System.currentTimeMillis() - timestamp;
 				System.out.println("Add additional:" + timestamp + "ms for buffer to be processed");
 				try {

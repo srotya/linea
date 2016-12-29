@@ -18,7 +18,6 @@ package com.srotya.linea;
 import java.io.Serializable;
 import java.net.SocketException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +41,6 @@ public class Event implements Serializable {
 	private List<Long> sourceIds;
 	private Long eventId;
 	private Map<String, Object> headers;
-	private byte[] body;
 
 	static {
 		try {
@@ -76,20 +74,6 @@ public class Event implements Serializable {
 	 */
 	public Map<String, Object> getHeaders() {
 		return headers;
-	}
-
-	/**
-	 * @return
-	 */
-	public byte[] getBody() {
-		return body;
-	}
-
-	/**
-	 * @param body
-	 */
-	public void setBody(byte[] body) {
-		this.body = body;
 	}
 
 	/**
@@ -155,6 +139,6 @@ public class Event implements Serializable {
 	@Override
 	public String toString() {
 		return "Event [originEventId=" + originEventId + ", sourceIds=" + sourceIds + ", eventId=" + eventId
-				+ ", headers=" + headers + ", body=" + Arrays.toString(body) + "]";
+				+ ", headers=" + headers + "]";
 	}
 }

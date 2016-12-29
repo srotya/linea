@@ -21,6 +21,7 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Logger;
 
 import com.lmax.disruptor.EventHandler;
 import com.srotya.linea.Event;
@@ -34,6 +35,7 @@ import com.srotya.linea.utils.Constants;
  */
 public class TCPClient implements EventHandler<Event> {
 
+	private static final Logger logger = Logger.getLogger(TCPClient.class.getName());
 	private Map<Integer, OutputStream> socketMap;
 	private Columbus columbus;
 
@@ -45,13 +47,25 @@ public class TCPClient implements EventHandler<Event> {
 	public void start() throws Exception {
 		for (Entry<Integer, WorkerEntry> entry : columbus.getWorkerMap().entrySet()) {
 			if (entry.getKey() != columbus.getSelfWorkerId()) {
-				@SuppressWarnings("resource")
-				Socket socket = new Socket(entry.getValue().getWorkerAddress(), entry.getValue().getDataPort());
-				socket.setSendBufferSize(1048576);
-				socket.setKeepAlive(true);
-				socket.setPerformancePreferences(0, 1, 2);
-				socketMap.put(entry.getKey(),
-						new BufferedOutputStream(socket.getOutputStream()));
+				boolean connected = false;
+				int retryCount = 1;
+				while (!connected && retryCount < 10) {
+					try {
+						@SuppressWarnings("resource")
+						Socket socket = new Socket(entry.getValue().getWorkerAddress(), entry.getValue().getDataPort());
+						socket.setSendBufferSize(1048576);
+						socket.setKeepAlive(true);
+						socket.setPerformancePreferences(0, 1, 2);
+						socketMap.put(entry.getKey(), new BufferedOutputStream(socket.getOutputStream(), 8192));
+						connected = true;
+					} catch (Exception e) {
+						logger.warning("Worker connection refused:" + entry.getValue().getWorkerAddress()
+								+ ". Retrying in " + retryCount + " seconds.....");
+						retryCount++;
+						Thread.sleep(1000 * retryCount);
+					}
+
+				}
 			}
 		}
 	}
@@ -60,8 +74,11 @@ public class TCPClient implements EventHandler<Event> {
 	public void onEvent(Event event, long sequence, boolean endOfBatch) throws Exception {
 		Integer workerId = (Integer) event.getHeaders().get(Constants.FIELD_DESTINATION_WORKER_ID);
 		OutputStream stream = socketMap.get(workerId);
-		KryoObjectEncoder.writeEventToStream(event, stream);
-		stream.flush();
+		byte[] bytes = KryoObjectEncoder.eventToByteArray(event);
+		stream.write(bytes);
+		if (endOfBatch) {
+			stream.flush();
+		}
 	}
 
 }

@@ -29,7 +29,7 @@ public class KryoObjectEncoder extends ByteArrayEncoder {
 		OutputStream os = bos;
 		Output output = new Output(os);
 		InternalTCPTransportServer.kryoThreadLocal.get().writeObject(output, event);
-		output.flush();
+		output.close();
 		return bos.toByteArray();
 	}
 

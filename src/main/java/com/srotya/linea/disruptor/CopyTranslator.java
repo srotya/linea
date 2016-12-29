@@ -32,7 +32,6 @@ public class CopyTranslator implements EventTranslatorOneArg<Event, Event>{
 		outputEvent.setEventId(inputEvent.getEventId());
 		outputEvent.setOriginEventId(inputEvent.getOriginEventId());
 		outputEvent.getHeaders().putAll(inputEvent.getHeaders());
-		outputEvent.setBody(inputEvent.getBody());
 	}
 
 }
