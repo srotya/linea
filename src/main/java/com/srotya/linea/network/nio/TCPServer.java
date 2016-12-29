@@ -53,6 +53,7 @@ public class TCPServer {
 		
 		while(true) {
 			final Socket socket = server.accept();
+			socket.setReceiveBufferSize(1048576);
 			es.submit(()->{
 				try {
 					InputStream stream = new BufferedInputStream(socket.getInputStream(), 4096);

@@ -47,6 +47,9 @@ public class TCPClient implements EventHandler<Event> {
 			if (entry.getKey() != columbus.getSelfWorkerId()) {
 				@SuppressWarnings("resource")
 				Socket socket = new Socket(entry.getValue().getWorkerAddress(), entry.getValue().getDataPort());
+				socket.setSendBufferSize(1048576);
+				socket.setKeepAlive(true);
+				socket.setPerformancePreferences(0, 1, 2);
 				socketMap.put(entry.getKey(),
 						new BufferedOutputStream(socket.getOutputStream()));
 			}

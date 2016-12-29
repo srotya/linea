@@ -50,6 +50,9 @@ public class Columbus implements Runnable {
 		this.address = InetAddress.getByName(
 				conf.getOrDefault(TopologyBuilder.WORKER_BIND_ADDRESS, TopologyBuilder.DEFAULT_BIND_ADDRESS));// NetworkUtils.getIPv4Address(iface);
 		this.workerMap = new ConcurrentHashMap<>();
+		
+		this.selfWorkerId = Integer.parseInt(conf.getOrDefault(TopologyBuilder.WORKER_ID, "0"));
+		
 		String keeperClass = conf.getOrDefault(KEEPER_CLASS_FQCN, DEFAULT_KEEPER_CLASS);
 		try {
 			keeper = (ClusterKeeper) Class.forName(keeperClass).newInstance();
