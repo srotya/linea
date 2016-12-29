@@ -17,125 +17,105 @@ package com.srotya.linea.clustering;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZKUtil;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.Stat;
-
-import com.google.gson.Gson;
 import com.srotya.linea.topology.TopologyBuilder;
-import com.srotya.linea.utils.NetworkUtils;
 
 /**
  * Worker discovery service of Linea.
  * 
  * @author ambud
  */
-public class Columbus implements Runnable, Watcher {
+public class Columbus implements Runnable {
 
+	private static final String KEEPER_CLASS_FQCN = "linea.keeper.class";
+	private static final String DEFAULT_KEEPER_CLASS = "com.srotya.linea.clustering.columbus.ZookeeperClusterKeeper";
 	private static final Logger logger = Logger.getLogger(Columbus.class.getName());
 	private AtomicInteger workerCount = new AtomicInteger(0);
 	private Map<Integer, WorkerEntry> workerMap;
 	private InetAddress address;
 	private int dataPort;
 	private int selfWorkerId;
-	// private Map<String, String> conf;
-	private ZooKeeper zk;
-	private boolean autoResetZk = false;
+	private ClusterKeeper keeper;
 
 	public Columbus(Map<String, String> conf) throws IOException {
-		// this.conf = conf;
-		NetworkInterface iface = NetworkUtils.selectDefaultIPAddress(true);
-		logger.info("Auto-selected network interface:" + iface);
-		this.address = InetAddress.getByName(conf.getOrDefault("bind.address", "localhost"));//NetworkUtils.getIPv4Address(iface);
-		this.workerMap = new ConcurrentHashMap<>();
 		this.dataPort = Integer
 				.parseInt(conf.getOrDefault(TopologyBuilder.WORKER_DATA_PORT, TopologyBuilder.DEFAULT_DATA_PORT));
-		System.err.println("Worker data port:" + dataPort);
+		logger.info("Using worker data port:" + dataPort);
+		this.address = InetAddress.getByName(
+				conf.getOrDefault(TopologyBuilder.WORKER_BIND_ADDRESS, TopologyBuilder.DEFAULT_BIND_ADDRESS));// NetworkUtils.getIPv4Address(iface);
+		this.workerMap = new ConcurrentHashMap<>();
+		String keeperClass = conf.getOrDefault(KEEPER_CLASS_FQCN, DEFAULT_KEEPER_CLASS);
+		try {
+			keeper = (ClusterKeeper) Class.forName(keeperClass).newInstance();
+			keeper.init(conf);
+		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+			logger.log(Level.SEVERE, "Invalid Keeper class", e);
+		} catch (Exception e) {
+			logger.log(Level.SEVERE, "Failed to initialize Keeper", e);
+		}
 	}
 
+	/**
+	 * @param workerId
+	 * @param peer
+	 * @param discoveryPort
+	 * @param dataPort
+	 */
 	public void addKnownPeer(int workerId, InetAddress peer, int discoveryPort, int dataPort) {
 		WorkerEntry entry = new WorkerEntry(peer, discoveryPort, dataPort);
 		workerMap.put(workerId, entry);
 		workerCount.incrementAndGet();
 	}
 
+	/**
+	 * @param workerId
+	 * @param entry
+	 */
 	public void addKnownPeer(int workerId, WorkerEntry entry) {
 		if (workerMap.containsKey(workerId)) {
+			logger.fine("Updating worker entry for worker id:" + workerId + "\t" + entry.getWorkerAddress());
 			workerMap.get(workerId).setLastContactTimestamp(System.currentTimeMillis());
 		} else {
 			workerMap.put(workerId, entry);
 			workerCount.incrementAndGet();
+			logger.fine("Added worker entry for worker id:" + workerId + "\t" + entry.getWorkerAddress());
 		}
 	}
 
 	@Override
 	public void run() {
-		try {
-			zk = new ZooKeeper("localhost:2181", 60000, this);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		Gson gson = new Gson();
-
-		// int ipAddress = NetUtils.stringIPtoInt(address.getHostAddress());
-		// register this worker
-		try {
-			if (autoResetZk) {
-				Stat exists = zk.exists("/linea", false);
-				if (exists != null) {
-					ZKUtil.deleteRecursive(zk, "/linea");
-				}
-			}
-
-			Stat exists = zk.exists("/linea", false);
-			if (exists == null) {
-				zk.create("/linea", null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-			}
-
-			WorkerEntry thisWorker = new WorkerEntry(address, dataPort, System.currentTimeMillis());
-			System.out.println("Written worker entry for this worker:"+gson.toJson(thisWorker)+"\t"+address);
-			String id = zk.create("/linea/", gson.toJson(thisWorker).getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE,
-					CreateMode.PERSISTENT_SEQUENTIAL);
-			System.out.println("Created node:" + id + " to register this worker");
-			id = id.substring(id.lastIndexOf("/") + 1, id.length());
-			selfWorkerId = Integer.parseInt(id);
-			addKnownPeer(selfWorkerId, thisWorker);
-		} catch (Exception e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
 		// monitor
 		while (true) {
 			try {
-				List<String> children = zk.getChildren("/linea", true);
-				for (String child : children) {
-					child = "/linea/" + child;
-					// System.out.println("Paths:" + child);
-					Stat stat = zk.exists(child, true);
-					byte[] data = zk.getData(child, true, stat);
-					WorkerEntry value = gson.fromJson(new String(data), WorkerEntry.class);
-					child = child.substring(child.lastIndexOf("/") + 1, child.length());
-					addKnownPeer(Integer.parseInt(child), value);
-					// System.err.println("Found entry:" + child);
+				WorkerEntry thisWorker = workerMap.get(selfWorkerId);
+				if (thisWorker == null) {
+					thisWorker = new WorkerEntry(address, dataPort, System.currentTimeMillis());
+				} else {
+					thisWorker.setLastContactTimestamp(System.currentTimeMillis());
 				}
-			} catch (Exception e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+				selfWorkerId = keeper.registerWorker(selfWorkerId, thisWorker);
+				addKnownPeer(selfWorkerId, thisWorker);
+			} catch (Exception e) {
+				logger.log(Level.SEVERE, "Exception registering worker", e);
+			}
+			try {
+				Map<Integer, WorkerEntry> entries = keeper.pollWorkers();
+				for (Entry<Integer, WorkerEntry> entry : entries.entrySet()) {
+					addKnownPeer(entry.getKey(), entry.getValue());
+				}
+			} catch (Exception e) {
+				logger.log(Level.SEVERE, "Exception polling worker information", e);
 			}
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
+				break;
 			}
 		}
 	}
@@ -150,10 +130,6 @@ public class Columbus implements Runnable, Watcher {
 
 	public int getWorkerCount() {
 		return workerCount.get();
-	}
-
-	@Override
-	public void process(WatchedEvent event) {
 	}
 
 }

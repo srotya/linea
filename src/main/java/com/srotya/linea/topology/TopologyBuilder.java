@@ -52,6 +52,7 @@ public class TopologyBuilder {
 	private ExecutorService backgrounServices;
 	public static final String WORKER_DATA_PORT = "worker.data.port";
 	public static final String WORKER_BIND_ADDRESS = "worker.data.bindAddress";
+	public static final String DEFAULT_BIND_ADDRESS = "localhost";
 
 	public TopologyBuilder(Map<String, String> conf) throws Exception {
 		this.conf = conf;

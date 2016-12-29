@@ -50,7 +50,6 @@ public class Router {
 	private CopyTranslator translator;
 	private Columbus columbus;
 	private TCPServer server;
-	// private InternalUDPTransportServer server;
 	private int workerCount;
 	private ExecutorService pool;
 	private int dataPort;
@@ -69,7 +68,7 @@ public class Router {
 		this.columbus = columbus;
 		this.workerCount = workerCount;
 		this.executorMap = executorMap;
-		this.bindAddress = conf.getOrDefault(TopologyBuilder.WORKER_BIND_ADDRESS, "localhost");
+		this.bindAddress = conf.getOrDefault(TopologyBuilder.WORKER_BIND_ADDRESS, TopologyBuilder.DEFAULT_BIND_ADDRESS);
 		this.dataPort = Integer
 				.parseInt(conf.getOrDefault(TopologyBuilder.WORKER_DATA_PORT, TopologyBuilder.DEFAULT_DATA_PORT));
 	}

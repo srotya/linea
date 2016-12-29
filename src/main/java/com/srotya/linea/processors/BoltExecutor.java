@@ -77,7 +77,7 @@ public class BoltExecutor {
 		this.taskProcessorMap = new HashMap<>();
 
 		this.templateBoltInstance = deserializeBoltInstance(serializedBoltInstance);
-		this.es = Executors.newFixedThreadPool((parallelism * 2));
+		this.es = Executors.newFixedThreadPool(parallelism * 2);
 		this.copyTranslator = new CopyTranslator();
 	}
 
@@ -93,9 +93,8 @@ public class BoltExecutor {
 		 * 
 		 * Or First worker 0*2+0 = 0 Second worker 1*2+0 = 2
 		 */
-//		es.submit(() -> {
-//			
-//		});
+		// es.submit(() -> {
+		// });
 		try {
 			for (int i = 0; i < parallelism; i++) {
 				int taskId = columbus.getSelfWorkerId() * parallelism + i;
@@ -165,8 +164,9 @@ public class BoltExecutor {
 		if (wrapper != null) {
 			wrapper.getBuffer().publishEvent(copyTranslator, event);
 		} else {
-//			System.out.println("Executor not found for:" + taskId + "\t" + columbus.getSelfWorkerId() + "\t"
-//					+ taskProcessorMap + "\t" + event);
+			// System.out.println("Executor not found for:" + taskId + "\t" +
+			// columbus.getSelfWorkerId() + "\t"
+			// + taskProcessorMap + "\t" + event);
 		}
 	}
 
@@ -200,7 +200,7 @@ public class BoltExecutor {
 		public BoltExecutorWrapper(DisruptorUnifiedFactory factory, ExecutorService pool, Bolt processor) {
 			this.pool = pool;
 			this.bolt = processor;
-			disruptor = new Disruptor<>(factory, 1024*8, pool, ProducerType.MULTI, new BlockingWaitStrategy());
+			disruptor = new Disruptor<>(factory, 1024 * 8, pool, ProducerType.MULTI, new BlockingWaitStrategy());
 			disruptor.handleEventsWith(this);
 		}
 
@@ -211,10 +211,10 @@ public class BoltExecutor {
 			buffer = disruptor.start();
 			pool.submit(() -> {
 				try {
+					// wait 3 seconds before launching ready methods
 					Thread.sleep(3000);
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					return;
 				}
 				bolt.ready();
 			});

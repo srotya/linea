@@ -60,7 +60,7 @@ public class TestSpout extends Spout {
 			event.getHeaders().put("uuid", taskId + "host" + i);
 			emittedEvents.add(event.getEventId());
 			collector.spoutEmit("jsonbolt", event);
-			if (i % 10000 == 0) {
+			if (i % 100000 == 0) {
 				System.err.println("Produced " + i + " events:" + taskId);
 			}
 		}
