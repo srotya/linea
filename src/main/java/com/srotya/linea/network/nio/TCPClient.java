@@ -42,7 +42,7 @@ public class TCPClient implements EventHandler<Event> {
 		socketMap = new HashMap<>();
 	}
 
-	public void init() throws Exception {
+	public void start() throws Exception {
 		for (Entry<Integer, WorkerEntry> entry : columbus.getWorkerMap().entrySet()) {
 			if (entry.getKey() != columbus.getSelfWorkerId()) {
 				@SuppressWarnings("resource")

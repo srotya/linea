@@ -15,14 +15,12 @@
  */
 package com.srotya.linea.network.netty;
 
-import java.net.Inet4Address;
-import java.net.NetworkInterface;
+import java.net.InetAddress;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.srotya.linea.network.IWCHandler;
 import com.srotya.linea.network.KryoObjectDecoder;
 import com.srotya.linea.network.Router;
-import com.srotya.linea.utils.NetworkUtils;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -56,15 +54,16 @@ public class InternalTCPTransportServer {
 	private int port;
 	private Channel channel;
 
-	public InternalTCPTransportServer(Router router, int port) {
+	private String bindAddress;
+
+	public InternalTCPTransportServer(Router router, String bindAddress, int port) {
 		this.router = router;
+		this.bindAddress = bindAddress;
 		this.port = port;
 	}
 
 	public void start() throws Exception {
-		NetworkInterface iface = NetworkUtils.selectDefaultIPAddress(false);
-		Inet4Address address = NetworkUtils.getIPv4Address(iface);
-
+		InetAddress address = InetAddress.getByName(bindAddress);
 		EventLoopGroup bossGroup = new NioEventLoopGroup(1);
 		EventLoopGroup workerGroup = new NioEventLoopGroup(3);
 
@@ -76,7 +75,7 @@ public class InternalTCPTransportServer {
 					@Override
 					protected void initChannel(SocketChannel ch) throws Exception {
 						ChannelPipeline p = ch.pipeline();
-						p.addLast(new LengthFieldBasedFrameDecoder(1024, 0, 4, 0, 4));
+						p.addLast(new LengthFieldBasedFrameDecoder(1500, 0, 4, 0, 4));
 						p.addLast(new KryoObjectDecoder());
 						p.addLast(new IWCHandler(router));
 					}
@@ -89,6 +88,6 @@ public class InternalTCPTransportServer {
 	}
 
 	public static void main(String[] args) throws Exception {
-		new InternalTCPTransportServer(null, 12552).start();
+		new InternalTCPTransportServer(null, "localhost", 12552).start();
 	}
 }

@@ -55,6 +55,7 @@ public class Router {
 	private ExecutorService pool;
 	private int dataPort;
 	private TCPClient client;
+	private String bindAddress;
 
 	/**
 	 * @param factory
@@ -68,6 +69,7 @@ public class Router {
 		this.columbus = columbus;
 		this.workerCount = workerCount;
 		this.executorMap = executorMap;
+		this.bindAddress = conf.getOrDefault(TopologyBuilder.WORKER_BIND_ADDRESS, "localhost");
 		this.dataPort = Integer
 				.parseInt(conf.getOrDefault(TopologyBuilder.WORKER_DATA_PORT, TopologyBuilder.DEFAULT_DATA_PORT));
 	}
@@ -80,17 +82,12 @@ public class Router {
 	@SuppressWarnings("unchecked")
 	public void start() throws Exception {
 		pool = Executors.newFixedThreadPool(2);
-		server = new TCPServer(this, dataPort);
-		// server = new InternalTCPTransportServer(this, dataPort);
-		// new InternalUDPTransportServer(this,
-		// dataPort);
-		// server = new InternalTCPTransportServer(this,
-		// dataPort);
+		server = new TCPServer(this, bindAddress, dataPort);
 		pool.submit(() -> {
 			try {
 				server.start();
 			} catch (Exception e) {
-				throw new RuntimeException("UDP Transport Server failed", e);
+				throw new RuntimeException("TCP Transport Server failed", e);
 			}
 		});
 
@@ -99,19 +96,10 @@ public class Router {
 			logger.info("Waiting for worker discovery");
 		}
 
-		networkTranmissionDisruptor = new Disruptor<Event>(factory, 1024, pool, ProducerType.MULTI,
+		networkTranmissionDisruptor = new Disruptor<Event>(factory, 1024 * 8, pool, ProducerType.MULTI,
 				new BlockingWaitStrategy());
-		// InternalUDPTransportClient client = new
-		// InternalUDPTransportClient(columbus,
-		// columbus.getWorkerMap().get(columbus.getSelfWorkerId()).getDataPort()
-		// + 1000, false);
-		// client.init();
-
-		// InternalTCPTransportClient client = new
-		// InternalTCPTransportClient(getColumbus());
-		// client.start();
 		client = new TCPClient(getColumbus());
-		client.init();
+		client.start();
 
 		networkTranmissionDisruptor.handleEventsWith(client);
 		networkTranmissionDisruptor.start();

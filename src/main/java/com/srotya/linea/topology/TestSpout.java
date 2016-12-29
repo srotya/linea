@@ -30,7 +30,7 @@ import io.netty.util.internal.ConcurrentSet;
  */
 public class TestSpout extends Spout {
 
-	private static final int COUNT = 50000;
+	private static final int COUNT = 500000;
 	private static final long serialVersionUID = 1L;
 	private transient Collector collector;
 	private transient Set<Long> emittedEvents;
@@ -59,13 +59,6 @@ public class TestSpout extends Spout {
 			Event event = collector.getFactory().buildEvent(taskId + "_" + i);
 			event.getHeaders().put("uuid", taskId + "host" + i);
 			emittedEvents.add(event.getEventId());
-//			if (i % 10000 == 0)
-//				try {
-//					Thread.sleep(1);
-//				} catch (InterruptedException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
 			collector.spoutEmit("jsonbolt", event);
 			if (i % 10000 == 0) {
 				System.err.println("Produced " + i + " events:" + taskId);

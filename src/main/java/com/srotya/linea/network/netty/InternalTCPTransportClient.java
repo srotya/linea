@@ -58,8 +58,7 @@ public class InternalTCPTransportClient implements EventHandler<Event> {
 
 	public void start() throws Exception {
 		for (Entry<Integer, WorkerEntry> entry : columbus.getWorkerMap().entrySet()) {
-
-			EventLoopGroup group = new NioEventLoopGroup();
+			EventLoopGroup group = new NioEventLoopGroup(2);
 			try {
 				Bootstrap b = new Bootstrap();
 				b.group(group).channel(NioSocketChannel.class).option(ChannelOption.TCP_NODELAY, true)
@@ -90,22 +89,6 @@ public class InternalTCPTransportClient implements EventHandler<Event> {
 		}
 	}
 
-	public static void main(String[] args) throws Exception {
-		Columbus columbus = new Columbus(new HashMap<>());
-		columbus.addKnownPeer(0,
-				new WorkerEntry(InetAddress.getByName("localhost"), 12552, System.currentTimeMillis()));
-		InternalTCPTransportClient client = new InternalTCPTransportClient(columbus);
-		client.start();
-
-		UnifiedFactory factory = new UnifiedFactory();
-		Event event = factory.buildEvent();
-		event.getHeaders().put("host", 1);
-		event.getHeaders().put(Constants.FIELD_DESTINATION_WORKER_ID, 0);
-		for (int i = 0; i < 100; i++)
-			client.onEvent(event, 1, false);
-		client.stop();
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -124,6 +107,22 @@ public class InternalTCPTransportClient implements EventHandler<Event> {
 					+ "\t" + columbus.getWorkerMap());
 			throw e;
 		}
+	}
+
+	public static void main(String[] args) throws Exception {
+		Columbus columbus = new Columbus(new HashMap<>());
+		columbus.addKnownPeer(0,
+				new WorkerEntry(InetAddress.getByName("localhost"), 12552, System.currentTimeMillis()));
+		InternalTCPTransportClient client = new InternalTCPTransportClient(columbus);
+		client.start();
+
+		UnifiedFactory factory = new UnifiedFactory();
+		Event event = factory.buildEvent();
+		event.getHeaders().put("host", 1);
+		event.getHeaders().put(Constants.FIELD_DESTINATION_WORKER_ID, 0);
+		for (int i = 0; i < 100; i++)
+			client.onEvent(event, 1, false);
+		client.stop();
 	}
 
 }

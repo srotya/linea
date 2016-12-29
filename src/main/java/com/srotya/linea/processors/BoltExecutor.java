@@ -77,7 +77,7 @@ public class BoltExecutor {
 		this.taskProcessorMap = new HashMap<>();
 
 		this.templateBoltInstance = deserializeBoltInstance(serializedBoltInstance);
-		this.es = Executors.newFixedThreadPool((parallelism * 2) + 1);
+		this.es = Executors.newFixedThreadPool((parallelism * 2));
 		this.copyTranslator = new CopyTranslator();
 	}
 
@@ -93,21 +93,22 @@ public class BoltExecutor {
 		 * 
 		 * Or First worker 0*2+0 = 0 Second worker 1*2+0 = 2
 		 */
-		es.submit(() -> {
-			try {
-				for (int i = 0; i < parallelism; i++) {
-					int taskId = columbus.getSelfWorkerId() * parallelism + i;
-					Bolt object = deserializeBoltInstance(serializedBoltInstance);
-					object.configure(conf, taskId, new Collector(factory, router, object.getBoltName(), taskId));
-					taskProcessorMap.put(taskId, new BoltExecutorWrapper(factory, es, object));
-				}
-				for (Entry<Integer, BoltExecutorWrapper> entry : taskProcessorMap.entrySet()) {
-					entry.getValue().start();
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
+//		es.submit(() -> {
+//			
+//		});
+		try {
+			for (int i = 0; i < parallelism; i++) {
+				int taskId = columbus.getSelfWorkerId() * parallelism + i;
+				Bolt object = deserializeBoltInstance(serializedBoltInstance);
+				object.configure(conf, taskId, new Collector(factory, router, object.getBoltName(), taskId));
+				taskProcessorMap.put(taskId, new BoltExecutorWrapper(factory, es, object));
 			}
-		});
+			for (Entry<Integer, BoltExecutorWrapper> entry : taskProcessorMap.entrySet()) {
+				entry.getValue().start();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -199,7 +200,7 @@ public class BoltExecutor {
 		public BoltExecutorWrapper(DisruptorUnifiedFactory factory, ExecutorService pool, Bolt processor) {
 			this.pool = pool;
 			this.bolt = processor;
-			disruptor = new Disruptor<>(factory, 1024, pool, ProducerType.MULTI, new BlockingWaitStrategy());
+			disruptor = new Disruptor<>(factory, 1024*8, pool, ProducerType.MULTI, new BlockingWaitStrategy());
 			disruptor.handleEventsWith(this);
 		}
 

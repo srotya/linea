@@ -42,7 +42,6 @@ public class TopologyBuilder {
 	public static final String ACKER_PARALLELISM = "acker.parallelism";
 	public static final String WORKER_COUNT = "worker.count";
 	public static final String WORKER_ID = "worker.id";
-//	public static final String WORKER_DISCOVERY_PORT = "worker.discovery.port";
 	private Map<String, String> conf;
 	private DisruptorUnifiedFactory factory;
 	private Map<String, BoltExecutor> executorMap;
@@ -52,6 +51,7 @@ public class TopologyBuilder {
 	private int ackerCount;
 	private ExecutorService backgrounServices;
 	public static final String WORKER_DATA_PORT = "worker.data.port";
+	public static final String WORKER_BIND_ADDRESS = "worker.data.bindAddress";
 
 	public TopologyBuilder(Map<String, String> conf) throws Exception {
 		this.conf = conf;

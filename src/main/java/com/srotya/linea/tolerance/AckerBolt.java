@@ -36,6 +36,7 @@ import com.srotya.linea.utils.Constants;
  */
 public class AckerBolt implements Bolt {
 
+	private static final int PRINT_COUNT = 100000;
 	private static final long serialVersionUID = 1L;
 	public static final String ACKER_BOLT_NAME = "_acker";
 	private static final float ACKER_MAP_LOAD_FACTOR = 0.9f;
@@ -74,12 +75,16 @@ public class AckerBolt implements Bolt {
 		} else {
 			Object sourceId = event.getHeaders().get(Constants.FIELD_GROUPBY_ROUTING_KEY);
 			String source = (String) event.getHeaders().get(Constants.FIELD_COMPONENT_NAME);
-//			if (event.getHeaders().containsKey(Constants.FIELD_DESTINATION_WORKER_ID)) {
-//				if (ackerMap.get((Long) sourceId) == null && !source.contains("Spout")) {
-//					System.out.println(
-//							"Network ack:" + event.getEventId() + "\t" + ackerMap.get((Long) sourceId) + "\t" + source);
-//				}
-//			}
+			// if
+			// (event.getHeaders().containsKey(Constants.FIELD_DESTINATION_WORKER_ID))
+			// {
+			// if (ackerMap.get((Long) sourceId) == null &&
+			// !source.contains("Spout")) {
+			// System.out.println(
+			// "Network ack:" + event.getEventId() + "\t" + ackerMap.get((Long)
+			// sourceId) + "\t" + source);
+			// }
+			// }
 
 			// Object originalEventId =
 			// event.getHeaders().get(Constants.FIELD_AGGREGATION_KEY);
@@ -129,8 +134,8 @@ public class AckerBolt implements Bolt {
 			if (trackerValue.isComplete()) {
 				// means event processing tree is complete
 				c++;
-				if (c % 100000 == 0) {
-					System.out.println("acked 100k");
+				if (c % PRINT_COUNT == 0) {
+					System.out.println("acked " + PRINT_COUNT + ":" + taskId);
 				}
 				// notify source that event's completely processed
 

@@ -18,6 +18,7 @@ package com.srotya.linea.network.nio;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
@@ -38,15 +39,17 @@ public class TCPServer {
 	private ExecutorService es;
 	private Router router;
 	private int dataPort;
+	private String bindAddress;
 	
-	public TCPServer(Router router, int dataPort) {
+	public TCPServer(Router router, String bindAddress, int dataPort) {
 		this.router = router;
+		this.bindAddress = bindAddress;
 		this.dataPort = dataPort;
 	}
 	
 	public void start() throws Exception {
 		es = Executors.newCachedThreadPool();
-		server = new ServerSocket(dataPort);
+		server = new ServerSocket(dataPort, 10, InetAddress.getByName(bindAddress));
 		
 		while(true) {
 			final Socket socket = server.accept();
