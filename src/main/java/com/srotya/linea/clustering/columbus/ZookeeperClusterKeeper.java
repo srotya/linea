@@ -34,6 +34,8 @@ import com.srotya.linea.clustering.ClusterKeeper;
 import com.srotya.linea.clustering.WorkerEntry;
 
 /**
+ * Zookeeper based {@link ClusterKeeper} implementation.
+ * 
  * @author ambud
  */
 public class ZookeeperClusterKeeper implements ClusterKeeper, Watcher {
@@ -66,6 +68,7 @@ public class ZookeeperClusterKeeper implements ClusterKeeper, Watcher {
 		}
 		Stat exists = zk.exists(zkRoot, false);
 		if (exists == null) {
+			logger.info("Missing ZkRoot, creating it:" + zkRoot);
 			zk.create(zkRoot, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 		}
 	}
@@ -102,8 +105,7 @@ public class ZookeeperClusterKeeper implements ClusterKeeper, Watcher {
 		logger.fine("Created node:" + id + " to register this worker");
 		id = id.substring(id.lastIndexOf("/") + 1, id.length());
 		selfWorkerId = Integer.parseInt(id);
-		logger.fine(
-				"Written worker entry for this worker:" + gson.toJson(entry) + "\t" + entry.getWorkerAddress());
+		logger.fine("Written worker entry for this worker:" + gson.toJson(entry) + "\t" + entry.getWorkerAddress());
 		return selfWorkerId;
 	}
 

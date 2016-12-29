@@ -30,7 +30,7 @@ import io.netty.util.internal.ConcurrentSet;
  */
 public class TestSpout extends Spout {
 
-	private static final int COUNT = 500000;
+	private static final int COUNT = 1000000;
 	private static final long serialVersionUID = 1L;
 	private transient Collector collector;
 	private transient Set<Long> emittedEvents;
