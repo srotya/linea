@@ -56,7 +56,7 @@ public class TCPClient implements EventHandler<Event> {
 						socket.setSendBufferSize(1048576);
 						socket.setKeepAlive(true);
 						socket.setPerformancePreferences(0, 1, 2);
-						socketMap.put(entry.getKey(), new BufferedOutputStream(socket.getOutputStream(), 8192));
+						socketMap.put(entry.getKey(), new BufferedOutputStream(socket.getOutputStream(), 8192*4));
 						connected = true;
 					} catch (Exception e) {
 						logger.warning("Worker connection refused:" + entry.getValue().getWorkerAddress()

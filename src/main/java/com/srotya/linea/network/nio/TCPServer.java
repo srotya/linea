@@ -60,7 +60,6 @@ public class TCPServer {
 					Input input = new Input(stream);
 					while(true) {
 						Event event = KryoObjectDecoder.streamToEvent(input);
-//						System.err.println("Recvd:"+event);
 						router.directLocalRouteEvent(event.getHeaders().get(Constants.FIELD_NEXT_BOLT).toString(),
 								(Integer) event.getHeaders().get(Constants.FIELD_DESTINATION_TASK_ID), event);
 					}
