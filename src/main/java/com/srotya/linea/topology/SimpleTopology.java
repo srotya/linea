@@ -35,8 +35,6 @@ public class SimpleTopology {
 		conf.put(TopologyBuilder.WORKER_DATA_PORT, args[2]);
 		conf.put(TopologyBuilder.ACKER_PARALLELISM, "1");
 		TopologyBuilder builder = new TopologyBuilder(conf);
-		builder = builder.addSpout(new TestSpout(500000), 1).addBolt(new PrinterBolt(), 1).start();
-		Thread.sleep(500000);
-		System.exit(1);
+		builder = builder.addSpout(new TestSpout(5000000), 1).addBolt(new PrinterBolt(), 1).start();
 	}
 }

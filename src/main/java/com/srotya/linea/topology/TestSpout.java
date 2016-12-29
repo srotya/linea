@@ -15,6 +15,8 @@
  */
 package com.srotya.linea.topology;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,8 +24,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.srotya.linea.Event;
 import com.srotya.linea.processors.Spout;
 import com.srotya.linea.tolerance.Collector;
-
-import io.netty.util.internal.ConcurrentSet;
 
 /**
  * @author ambud.sharma
@@ -41,13 +41,13 @@ public class TestSpout extends Spout {
 	public TestSpout(int messageCount) {
 		this.messageCount = messageCount;
 	}
-	
+
 	@Override
 	public void configure(Map<String, String> conf, int taskId, Collector collector) {
 		this.taskId = taskId;
 		this.processed = new AtomicBoolean(false);
 		this.collector = collector;
-		emittedEvents = new ConcurrentSet<>();
+		emittedEvents = Collections.synchronizedSet(new HashSet<>());
 	}
 
 	@Override

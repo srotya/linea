@@ -49,7 +49,7 @@ public class TopologyBuilder {
 	private Columbus columbus;
 	private int workerCount;
 	private int ackerCount;
-	private ExecutorService backgrounServices;
+	private ExecutorService backgroundServices;
 	public static final String WORKER_DATA_PORT = "worker.data.port";
 	public static final String WORKER_BIND_ADDRESS = "worker.data.bindAddress";
 	public static final String DEFAULT_BIND_ADDRESS = "localhost";
@@ -62,7 +62,7 @@ public class TopologyBuilder {
 		columbus = new Columbus(conf);
 		workerCount = Integer.parseInt(conf.getOrDefault(WORKER_COUNT, DEFAULT_ACKER_PARALLELISM));
 		router = new Router(factory, columbus, workerCount, executorMap, conf);
-		backgrounServices = Executors.newFixedThreadPool(2);
+		backgroundServices = Executors.newFixedThreadPool(1);
 	}
 
 	public TopologyBuilder addSpout(Spout spout, int parallelism) throws IOException, ClassNotFoundException {
@@ -79,7 +79,7 @@ public class TopologyBuilder {
 
 	public TopologyBuilder start() throws Exception {
 		addBolt(new AckerBolt(), ackerCount);
-		backgrounServices.submit(() -> columbus.run());
+		backgroundServices.submit(() -> columbus.run());
 		router.start();
 		for (Entry<String, BoltExecutor> entry : executorMap.entrySet()) {
 			entry.getValue().start();

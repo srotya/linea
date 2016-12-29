@@ -10,6 +10,11 @@ import com.esotericsoftware.kryo.io.Input;
 import com.srotya.linea.Event;
 import com.srotya.linea.network.nio.TCPServer;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.ByteToMessageDecoder;
+
 /**
  * Decodes {@link Kryo} Serialized {@link Event} objects. This Decoder
  * implementation has refactored utility methods that are used for both TCP and
@@ -17,7 +22,7 @@ import com.srotya.linea.network.nio.TCPServer;
  * 
  * @author ambud
  */
-public class KryoObjectDecoder {
+public class KryoObjectDecoder extends ByteToMessageDecoder {
 
 	public KryoObjectDecoder() {
 	}
@@ -31,27 +36,27 @@ public class KryoObjectDecoder {
 	 * @param in
 	 * @return list of tauEvents
 	 */
-//	public static List<Event> bytebufToEvents(ByteBuf in) {
-//		short count = in.readShort();
-//		ByteBufInputStream bis = new ByteBufInputStream(in);
-//		InputStream stream = bis;
-//		List<Event> events = new ArrayList<>(count);
-//		Input input = new Input(stream);
-//		int i = 0;
-//		try {
-//			for (; i < count; i++) {
-//				Event event = TCPServer.kryoThreadLocal.get().readObject(input, Event.class);
-//				events.add(event);
-//			}
-//			return events;
-//		} catch (Exception e) {
-//			System.err.println("FAILURE to read count of events:" + count + "\tat i=" + i);
-//			e.printStackTrace();
-//			throw e;
-//		} finally {
-//			input.close();
-//		}
-//	}
+	public static List<Event> bytebufToEvents(ByteBuf in) {
+		short count = in.readShort();
+		ByteBufInputStream bis = new ByteBufInputStream(in);
+		InputStream stream = bis;
+		List<Event> events = new ArrayList<>(count);
+		Input input = new Input(stream);
+		int i = 0;
+		try {
+			for (; i < count; i++) {
+				Event event = TCPServer.kryoThreadLocal.get().readObject(input, Event.class);
+				events.add(event);
+			}
+			return events;
+		} catch (Exception e) {
+			System.err.println("FAILURE to read count of events:" + count + "\tat i=" + i);
+			e.printStackTrace();
+			throw e;
+		} finally {
+			input.close();
+		}
+	}
 
 	/**
 	 * Deserializes a single {@link Event} from a Netty {@link ByteBuf}
@@ -60,11 +65,11 @@ public class KryoObjectDecoder {
 	 * @return tauEvent
 	 * @throws IOException
 	 */
-//	public static Event byteBufToEvent(ByteBuf in) throws IOException {
-//		ByteBufInputStream bis = new ByteBufInputStream(in);
-//		InputStream stream = bis;
-//		return streamToEvent(stream);
-//	}
+	public static Event byteBufToEvent(ByteBuf in) throws IOException {
+		ByteBufInputStream bis = new ByteBufInputStream(in);
+		InputStream stream = bis;
+		return streamToEvent(stream);
+	}
 
 	/**
 	 * @param stream
@@ -113,6 +118,15 @@ public class KryoObjectDecoder {
 		} finally {
 			input.close();
 		}
+	}
+
+
+	@Override
+	protected void decode(ChannelHandlerContext arg0, ByteBuf frame, List<Object> output) throws Exception {
+		if (frame == null) {
+		}
+		Event event = byteBufToEvent(frame);
+		output.add(event);
 	}
 
 }

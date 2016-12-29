@@ -9,12 +9,14 @@ import com.esotericsoftware.kryo.io.Output;
 import com.srotya.linea.Event;
 import com.srotya.linea.network.nio.TCPServer;
 
+import io.netty.handler.codec.bytes.ByteArrayEncoder;
+
 /**
  * {@link Kryo} serializes {@link Event} for Netty transmission
  * 
  * @author ambud
  */
-public class KryoObjectEncoder {
+public class KryoObjectEncoder extends ByteArrayEncoder {
 	
 	public static void writeEventToStream(Event event, OutputStream stream) throws IOException {
 		Output output = new Output(stream);

@@ -24,6 +24,7 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.srotya.linea.Event;
 import com.srotya.linea.network.KryoObjectDecoder;
@@ -40,6 +41,13 @@ public class TCPServer {
 	private Router router;
 	private int dataPort;
 	private String bindAddress;
+	public static final ThreadLocal<Kryo> kryoThreadLocal = new ThreadLocal<Kryo>() {
+		@Override
+		protected Kryo initialValue() {
+			Kryo kryo = new Kryo();
+			return kryo;
+		}
+	};
 	
 	public TCPServer(Router router, String bindAddress, int dataPort) {
 		this.router = router;
