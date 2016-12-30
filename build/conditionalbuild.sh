@@ -25,7 +25,6 @@ if [ "master" == "$TRAVIS_BRANCH" ]; then
     
     mkdir -p ~/.ssh
     chmod 700 ~/.ssh
-    ls -lh /tmp/secrets/secrets/
     cp /tmp/secrets/secrets/id_rsa ~/.ssh/id_rsa
     chmod 400 ~/.ssh/id_rsa
     
@@ -45,7 +44,7 @@ if [ "master" == "$TRAVIS_BRANCH" ]; then
     git checkout master || git checkout -b master
     git reset --hard origin/master
     
-    gpg --fast-import /tmp/secrets/secrets/codesign.asc >> /dev/null
+    gpg -q --fast-import /tmp/secrets/secrets/codesign.asc >> /dev/null
     
-    mvn -q -T2 -B -Darguments=-Dgpg.passphrase=$passphrase release:clean release:prepare release:perform --settings settings.xml
+    mvn -T2 -B -Darguments=-Dgpg.passphrase=$passphrase release:clean release:prepare release:perform --settings settings.xml
 fi

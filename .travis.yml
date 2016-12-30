@@ -6,7 +6,7 @@ addons:
   apt:
     packages:
     - rpm
-script: mvn -q -T2 -DSTORM_TEST_TIMEOUT_MS=60000 clean test
+script: mvn -q -T2 clean test
 after_success:
 - bash <(curl -s https://codecov.io/bash)
 - cp build/conditionalbuild.sh /tmp/
