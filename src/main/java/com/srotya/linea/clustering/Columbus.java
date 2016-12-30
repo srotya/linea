@@ -15,8 +15,12 @@
  */
 package com.srotya.linea.clustering;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.srotya.linea.topology.TopologyBuilder;
+import com.srotya.linea.TopologyBuilder;
 
 /**
  * Worker discovery service of Linea.
@@ -42,6 +46,7 @@ public class Columbus implements Runnable {
 	private int dataPort;
 	private int selfWorkerId;
 	private ClusterKeeper keeper;
+	private File idCacheFile;
 
 	public Columbus(Map<String, String> conf) throws IOException {
 		this.dataPort = Integer
@@ -50,9 +55,19 @@ public class Columbus implements Runnable {
 		this.address = InetAddress.getByName(
 				conf.getOrDefault(TopologyBuilder.WORKER_BIND_ADDRESS, TopologyBuilder.DEFAULT_BIND_ADDRESS));// NetworkUtils.getIPv4Address(iface);
 		this.workerMap = new ConcurrentHashMap<>();
-		
-		this.selfWorkerId = Integer.parseInt(conf.getOrDefault(TopologyBuilder.WORKER_ID, "0"));
-		
+
+		this.selfWorkerId = Integer.parseInt(conf.getOrDefault(TopologyBuilder.WORKER_ID, "-1"));
+		this.idCacheFile = new File(".idCache");
+		// check cache, uses the same logic as https://issues.apache.org/jira/browse/KAFKA-1070
+		if (selfWorkerId < 0) {
+			if (idCacheFile.exists()) {
+				String workerId = new String(Files.readAllBytes(idCacheFile.toPath()), Charset.forName("utf-8"));
+				if (workerId.length() > 0) {
+					selfWorkerId = Integer.parseInt(workerId);
+				}
+			}
+		}
+
 		String keeperClass = conf.getOrDefault(KEEPER_CLASS_FQCN, DEFAULT_KEEPER_CLASS);
 		try {
 			keeper = (ClusterKeeper) Class.forName(keeperClass).newInstance();
@@ -103,6 +118,9 @@ public class Columbus implements Runnable {
 					thisWorker.setLastContactTimestamp(System.currentTimeMillis());
 				}
 				selfWorkerId = keeper.registerWorker(selfWorkerId, thisWorker);
+				// update id cache file
+				Files.write(idCacheFile.toPath(), String.valueOf(selfWorkerId).getBytes(), StandardOpenOption.WRITE,
+						StandardOpenOption.CREATE);
 				addKnownPeer(selfWorkerId, thisWorker);
 			} catch (Exception e) {
 				logger.log(Level.SEVERE, "Exception registering worker", e);

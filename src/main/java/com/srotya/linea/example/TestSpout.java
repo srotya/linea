@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.linea.topology;
+package com.srotya.linea.example;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -79,7 +79,6 @@ public class TestSpout extends Spout {
 				System.out.println("Add additional:" + timestamp + "ms for buffer to be processed");
 				try {
 					Thread.sleep(5000);
-					System.exit(1);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

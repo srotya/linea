@@ -10,7 +10,7 @@ Linea also uses an Apache Storm like API to enable easy adoption and familiarity
 
 ## Why Linea?
 
-Linea is intended to be light-weight, think hybrid of Storm and Akka/Vert.x
+Linea is intended to be light-weight (3MB shaded jar), think hybrid of Storm and Akka/Vert.x
 
 Profiling and tuning is relatively straight forward with Linea due to it's light weight design enabling quicker development to production cycles in comparison.
 
@@ -28,7 +28,7 @@ To build your own Streaming system using this as building block.
 
 ### Sample Code
 
-This is how simple it is to build a topology with Linea
+This is how simple it is to build a topology with Linea.
 
 ```
 Map<String, String> conf = new HashMap<>();

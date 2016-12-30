@@ -96,11 +96,17 @@ public class ZookeeperClusterKeeper implements ClusterKeeper, Watcher {
 	@Override
 	public int registerWorker(int selfWorkerId, WorkerEntry entry) throws Exception {
 		Gson gson = new Gson();
-		String id = "/linea/" + selfWorkerId;
+		String id = zkRoot + "/" + selfWorkerId;
 		Stat exists = zk.exists(id, this);
 		if (exists == null) {
-			id = zk.create("/linea/" + selfWorkerId, gson.toJson(entry).getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE,
-					CreateMode.PERSISTENT);
+			if (selfWorkerId < 0) {
+				id = zk.create(zkRoot + "/", gson.toJson(entry).getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE,
+						CreateMode.PERSISTENT_SEQUENTIAL);
+				zk.delete(id, -1);
+			} else {
+				id = zk.create(zkRoot + "/" + selfWorkerId, gson.toJson(entry).getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE,
+						CreateMode.PERSISTENT);
+			}
 		}
 		logger.fine("Created node:" + id + " to register this worker");
 		id = id.substring(id.lastIndexOf("/") + 1, id.length());

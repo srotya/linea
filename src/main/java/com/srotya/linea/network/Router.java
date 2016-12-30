@@ -25,6 +25,7 @@ import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.srotya.linea.Event;
 import com.srotya.linea.MurmurHash;
+import com.srotya.linea.TopologyBuilder;
 import com.srotya.linea.clustering.Columbus;
 import com.srotya.linea.disruptor.CopyTranslator;
 import com.srotya.linea.disruptor.ROUTING_TYPE;
@@ -32,7 +33,6 @@ import com.srotya.linea.network.nio.TCPClient;
 import com.srotya.linea.network.nio.TCPServer;
 import com.srotya.linea.processors.BoltExecutor;
 import com.srotya.linea.processors.DisruptorUnifiedFactory;
-import com.srotya.linea.topology.TopologyBuilder;
 import com.srotya.linea.utils.Constants;
 
 /**

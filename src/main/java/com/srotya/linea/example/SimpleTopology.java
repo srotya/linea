@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.linea.topology;
+package com.srotya.linea.example;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import com.srotya.linea.TopologyBuilder;
 
 /**
  * Simple test topology to validate how Linea will launch and run pipelines and
@@ -35,6 +37,6 @@ public class SimpleTopology {
 		conf.put(TopologyBuilder.WORKER_DATA_PORT, args[2]);
 		conf.put(TopologyBuilder.ACKER_PARALLELISM, "1");
 		TopologyBuilder builder = new TopologyBuilder(conf);
-		builder = builder.addSpout(new TestSpout(5000000), 1).addBolt(new PrinterBolt(), 1).start();
+		builder = builder.addSpout(new TestSpout(10000000), 1).addBolt(new PrinterBolt(), 1).start();
 	}
 }
