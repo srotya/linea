@@ -10,6 +10,30 @@
 	<artifactId>linea</artifactId>
 	<version>0.0.2-SNAPSHOT</version>
 	<name>linea</name>
+	<url>https://github.com/srotya/linea</url>
+	<licenses>
+		<license>
+			<name>The Apache Software License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<id>asharma</id>
+			<name>Ambud Sharma</name>
+			<organization>Srotya</organization>
+			<roles>
+				<role>Author</role>
+				<role>Committer</role>
+			</roles>
+		</developer>
+	</developers>
+	<scm>
+		<connection>scm:git:git@github.com:srotya/linea.git</connection>
+		<developerConnection>scm:git:git@github.com:srotya/linea.git</developerConnection>
+		<url>https://github.com/srotya/linea.git</url>
+		<tag>HEAD</tag>
+	</scm>
 	<properties>
 		<disruptor.version>3.3.2</disruptor.version>
 		<kryo.version>4.0.0</kryo.version>
