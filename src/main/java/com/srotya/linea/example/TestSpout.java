@@ -26,7 +26,7 @@ import com.srotya.linea.processors.Spout;
 import com.srotya.linea.tolerance.Collector;
 
 /**
- * @author ambud.sharma
+ * @author ambud
  */
 public class TestSpout extends Spout {
 
@@ -100,13 +100,6 @@ public class TestSpout extends Spout {
 		// boolean removed = false;
 		emittedEvents.remove(eventId);
 		c++;
-
-		// if (!removed) {
-		// System.err.println("Misrouted event:" + eventId + "\t" +
-		// emittedEvents.size());
-		// } else {
-		// counter = counter + 1;
-		// }
 	}
 
 	@Override

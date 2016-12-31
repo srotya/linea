@@ -35,10 +35,10 @@ public interface Bolt extends Serializable {
 	 * Configure method for initializing the bolt
 	 * 
 	 * @param conf
-	 * @param taskId
+	 * @param instanceId
 	 * @param collector
 	 */
-	public void configure(Map<String, String> conf, int taskId, Collector collector);
+	public void configure(Map<String, String> conf, int instanceId, Collector collector);
 
 	/**
 	 * Method asynchronously called just before events are started and can be

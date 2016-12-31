@@ -38,7 +38,7 @@ public class PrinterBolt implements Bolt {
 
 	@Override
 	public void process(Event event) {
-//		System.out.println("Print event:" + event);
+		System.out.println("Print event:" + event);
 		collector.ack(event);
 	}
 

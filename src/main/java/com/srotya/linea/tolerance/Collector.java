@@ -86,6 +86,14 @@ public class Collector {
 		router.routeEvent(AckerBolt.ACKER_BOLT_NAME, event);
 	}
 
+	/**
+	 * Method to be used only by Spout when it generates a new {@link Event}.
+	 * This method will trigger creation of a new Event processing tree. (same
+	 * as a tuple tree Storm)
+	 * 
+	 * @param nextProcessorId
+	 * @param event
+	 */
 	public void spoutEmit(String nextProcessorId, Event event) {
 		event.getHeaders().put(Constants.FIELD_COMPONENT_NAME, lComponentId);
 		event.getHeaders().put(Constants.FIELD_TASK_ID, lTaskId);
@@ -93,12 +101,29 @@ public class Collector {
 		emit(nextProcessorId, event, event);
 	}
 
+	/**
+	 * Emit {@link Event} directly to a task. This method circumvents the
+	 * {@link Router}'s destination calculation logic. (To be used with extreme
+	 * care)
+	 * 
+	 * @param nextProcessor
+	 * @param destinationTaskId
+	 * @param event
+	 */
 	public void emitDirect(String nextProcessor, Integer destinationTaskId, Event event) {
 		event.getHeaders().put(Constants.FIELD_TASK_ID, lTaskId);
 		event.getHeaders().put(Constants.FIELD_COMPONENT_NAME, lComponentId);
 		router.routeToTaskId(nextProcessor, event, null, destinationTaskId);
 	}
 
+	/**
+	 * Emit event to next processor id. Event object is generated internally
+	 * from the supplied headers.
+	 * 
+	 * @param nextProcessorId
+	 * @param outputEventHeaders
+	 * @param anchorEvent
+	 */
 	public void emit(String nextProcessorId, Map<String, String> outputEventHeaders, Event anchorEvent) {
 		Event outputEvent = factory.buildEvent();
 		outputEvent.getHeaders().putAll(outputEventHeaders);
@@ -111,6 +136,13 @@ public class Collector {
 		router.routeEvent(nextProcessorId, outputEvent);
 	}
 
+	/**
+	 * Internally used for Spout {@link Event} emission.
+	 * 
+	 * @param nextProcessorId
+	 * @param outputEvent
+	 * @param anchorEvent
+	 */
 	protected void emit(String nextProcessorId, Event outputEvent, Event anchorEvent) {
 		outputEvent.setOriginEventId(anchorEvent.getOriginEventId());
 		outputEvent.getSourceIds().add(anchorEvent.getOriginEventId());
