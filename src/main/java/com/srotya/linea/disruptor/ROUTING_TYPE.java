@@ -15,6 +15,11 @@
  */
 package com.srotya.linea.disruptor;
 
+/**
+ * Type of Routing strategies supported by Bolts.
+ * 
+ * @author ambud
+ */
 public enum ROUTING_TYPE {
 	
 	SHUFFLE,

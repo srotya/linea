@@ -37,8 +37,51 @@ public class KryoObjectDecoder {
 	public KryoObjectDecoder() {
 	}
 
+//	/**
+//	 * Takes a Netty {@link ByteBuf} as input and returns a list of events
+//	 * deserialized from the buffer. <br>
+//	 * The buffer must be length prefixed to get the number of events in the
+//	 * buffer.
+//	 * 
+//	 * @param in
+//	 * @return list of tauEvents
+//	 */
+//	public static List<Event> bytebufToEvents(ByteBuf in) {
+//		short count = in.readShort();
+//		ByteBufInputStream bis = new ByteBufInputStream(in);
+//		InputStream stream = bis;
+//		List<Event> events = new ArrayList<>(count);
+//		Input input = new Input(stream);
+//		int i = 0;
+//		try {
+//			for (; i < count; i++) {
+//				Event event = TCPServer.kryoThreadLocal.get().readObject(input, Event.class);
+//				events.add(event);
+//			}
+//			return events;
+//		} catch (Exception e) {
+//			System.err.println("FAILURE to read count of events:" + count + "\tat i=" + i);
+//			e.printStackTrace();
+//			throw e;
+//		} finally {
+//			input.close();
+//		}
+//	}
+
+//	/**
+//	 * Deserializes a single {@link Event} from a Netty {@link ByteBuf}
+//	 * 
+//	 * @param in
+//	 * @return tauEvent
+//	 * @throws IOException
+//	 */
+//	public static Event byteBufToEvent(ByteBuf in) throws IOException {
+//		ByteBufInputStream bis = new ByteBufInputStream(in);
+//		InputStream stream = bis;
+//		return streamToEvent(stream);
+//	}
+
 	/**
-	 * Deserialize {@link InputStream} to Event using Kryo
 	 * @param stream
 	 * @return
 	 * @throws IOException

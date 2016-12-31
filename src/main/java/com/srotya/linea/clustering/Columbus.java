@@ -28,10 +28,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.srotya.linea.TopologyBuilder;
+import com.srotya.linea.Topology;
 
 /**
- * Worker discovery service of Linea.
+ * The worker discovery service of Linea. Columbus runs as a daemon and
+ * periodically polls the {@link ClusterKeeper} to find information about
+ * discovered workers.
  * 
  * @author ambud
  */
@@ -48,17 +50,21 @@ public class Columbus implements Runnable {
 	private ClusterKeeper keeper;
 	private File idCacheFile;
 
+	/**
+	 * @param conf
+	 * @throws IOException
+	 */
 	public Columbus(Map<String, String> conf) throws IOException {
-		this.dataPort = Integer
-				.parseInt(conf.getOrDefault(TopologyBuilder.WORKER_DATA_PORT, TopologyBuilder.DEFAULT_DATA_PORT));
+		this.dataPort = Integer.parseInt(conf.getOrDefault(Topology.WORKER_DATA_PORT, Topology.DEFAULT_DATA_PORT));
 		logger.info("Using worker data port:" + dataPort);
-		this.address = InetAddress.getByName(
-				conf.getOrDefault(TopologyBuilder.WORKER_BIND_ADDRESS, TopologyBuilder.DEFAULT_BIND_ADDRESS));// NetworkUtils.getIPv4Address(iface);
+		this.address = InetAddress
+				.getByName(conf.getOrDefault(Topology.WORKER_BIND_ADDRESS, Topology.DEFAULT_BIND_ADDRESS));// NetworkUtils.getIPv4Address(iface);
 		this.workerMap = new ConcurrentHashMap<>();
 
-		this.selfWorkerId = Integer.parseInt(conf.getOrDefault(TopologyBuilder.WORKER_ID, "-1"));
+		this.selfWorkerId = Integer.parseInt(conf.getOrDefault(Topology.WORKER_ID, "-1"));
 		this.idCacheFile = new File(".idCache");
-		// check cache, uses the same logic as https://issues.apache.org/jira/browse/KAFKA-1070
+		// check cache, uses the same logic as
+		// https://issues.apache.org/jira/browse/KAFKA-1070
 		if (selfWorkerId < 0) {
 			if (idCacheFile.exists()) {
 				String workerId = new String(Files.readAllBytes(idCacheFile.toPath()), Charset.forName("utf-8"));
@@ -80,6 +86,8 @@ public class Columbus implements Runnable {
 	}
 
 	/**
+	 * Add a known peer to the worker map and increment worker count by 1.
+	 * 
 	 * @param workerId
 	 * @param peer
 	 * @param discoveryPort
@@ -92,6 +100,9 @@ public class Columbus implements Runnable {
 	}
 
 	/**
+	 * Check if worker id already exists and update the last discovered time
+	 * else create an entry in the worker map.
+	 * 
 	 * @param workerId
 	 * @param entry
 	 */
@@ -126,8 +137,10 @@ public class Columbus implements Runnable {
 				logger.log(Level.SEVERE, "Exception registering worker", e);
 			}
 			try {
+				// poll workers and
 				Map<Integer, WorkerEntry> entries = keeper.pollWorkers();
 				for (Entry<Integer, WorkerEntry> entry : entries.entrySet()) {
+					logger.fine("Discovered worker:" + entry.getValue() + " with id:" + entry.getKey());
 					addKnownPeer(entry.getKey(), entry.getValue());
 				}
 			} catch (Exception e) {
@@ -141,14 +154,23 @@ public class Columbus implements Runnable {
 		}
 	}
 
+	/**
+	 * @return id for this worker
+	 */
 	public Integer getSelfWorkerId() {
 		return selfWorkerId;
 	}
 
+	/**
+	 * @return worker map
+	 */
 	public Map<Integer, WorkerEntry> getWorkerMap() {
 		return workerMap;
 	}
 
+	/**
+	 * @return worker count
+	 */
 	public int getWorkerCount() {
 		return workerCount.get();
 	}

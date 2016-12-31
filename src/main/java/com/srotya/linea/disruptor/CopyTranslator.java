@@ -16,13 +16,15 @@
 package com.srotya.linea.disruptor;
 
 import com.lmax.disruptor.EventTranslatorOneArg;
+import com.lmax.disruptor.RingBuffer;
 import com.srotya.linea.Event;
 
 /**
- * @author ambudsharma
- *
+ * Translator used by Disruptor to copy events into a {@link RingBuffer}
+ * 
+ * @author ambud
  */
-public class CopyTranslator implements EventTranslatorOneArg<Event, Event>{
+public class CopyTranslator implements EventTranslatorOneArg<Event, Event> {
 
 	@Override
 	public void translateTo(Event outputEvent, long sequence, Event inputEvent) {

@@ -41,7 +41,8 @@ public interface Bolt extends Serializable {
 	public void configure(Map<String, String> conf, int taskId, Collector collector);
 
 	/**
-	 * Method asynchronously called just before events are started
+	 * Method asynchronously called just before events are started and can be
+	 * used for long running background operation.
 	 */
 	public void ready();
 

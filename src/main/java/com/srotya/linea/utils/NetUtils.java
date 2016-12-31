@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 Ambud Sharma
+ * Copyright 2016 Ambud Sharma
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,18 @@
  */
 package com.srotya.linea.utils;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 
+/**
+ * Network utilities
+ * 
+ * @author ambud
+ */
 public class NetUtils {
 
 	private NetUtils() {
@@ -29,7 +35,7 @@ public class NetUtils {
 	/**
 	 * Find broadcast address for multicast gossip implementations
 	 * 
-	 * @return
+	 * @return get broadcast address
 	 * @throws SocketException
 	 */
 	public static InetAddress getBroadcastAddress() throws SocketException {
@@ -51,6 +57,12 @@ public class NetUtils {
 		return null;
 	}
 
+	/**
+	 * Convert long (primitive) to 8 bytes
+	 * 
+	 * @param l
+	 * @return bytes
+	 */
 	public static byte[] longToBytes(long l) {
 		byte[] result = new byte[8];
 		for (int i = 7; i >= 0; i--) {
@@ -60,6 +72,12 @@ public class NetUtils {
 		return result;
 	}
 
+	/**
+	 * Convert 8 bytes to long (primitive)
+	 * 
+	 * @param b
+	 * @return long
+	 */
 	public static long bytesToLong(byte[] b) {
 		long result = 0;
 		for (int i = 0; i < 8; i++) {
@@ -69,6 +87,11 @@ public class NetUtils {
 		return result;
 	}
 
+	/**
+	 * Convert 32 bit integer IP to string representation 
+	 * @param ip
+	 * @return ip string
+	 */
 	public static String toStringIP(int ip) {
 		StringBuilder builder = new StringBuilder();
 		builder.append(((ip >> 24) & 0xff) + ".");
@@ -78,6 +101,11 @@ public class NetUtils {
 		return builder.toString();
 	}
 
+	/**
+	 * Convert string IP to 32 bit integer
+	 * @param ip
+	 * @return ip integer
+	 */
 	public static int stringIPtoInt(String ip) {
 		String[] ipParts = ip.split("\\.");
 		int intIP = 0;
@@ -85,6 +113,42 @@ public class NetUtils {
 			intIP += Integer.parseInt(ipParts[i]) << (24 - (8 * i));
 		}
 		return intIP;
+	}
+	
+	/**
+	 * Auto select network interface, to be used for binding sockets
+	 * @param loopback
+	 * @return networkInterface
+	 * @throws SocketException
+	 */
+	public static NetworkInterface selectDefaultIPAddress(boolean loopback) throws SocketException {
+		Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces();
+		while (ifaces.hasMoreElements()) {
+			NetworkInterface iface = ifaces.nextElement();
+			if (loopback && iface.isLoopback()) {
+				return iface;
+			} else if (iface.isPointToPoint() || iface.isVirtual()) {
+				continue;
+			}
+			if (!iface.isLoopback() && iface.isUp()) {
+				return iface;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Get IP address of a network interface 
+	 * @param iface
+	 * @return ipAddress
+	 */
+	public static Inet4Address getIPv4Address(NetworkInterface iface) {
+		for (InterfaceAddress interfaceAddress : iface.getInterfaceAddresses()) {
+			if (interfaceAddress.getAddress() instanceof Inet4Address) {
+				return (Inet4Address) interfaceAddress.getAddress();
+			}
+		}
+		return null;
 	}
 
 }

@@ -15,13 +15,12 @@
  */
 package com.srotya.linea;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Unified factory implementation for Tau
+ * Unified factory implementation for Linea
  * 
- * @author ambudsharma
+ * @author ambud
  */
 public class UnifiedFactory implements EventFactory {
 	
@@ -36,21 +35,12 @@ public class UnifiedFactory implements EventFactory {
 	}
 	
 	/**
+	 * Build Event with existing headers
 	 * @param headers
-	 * @return
+	 * @return event
 	 */
 	public Event buildEvent(Map<String, Object> headers) {
 		return new Event(headers);
 	}
 	
-	public static Map<String, String> getSubmap(String contains, Map<String, String> stormConf) {
-		Map<String, String> conf = new HashMap<>();
-		for(Object key:stormConf.keySet()) {
-			if(key.toString().contains(contains)) {
-				conf.put(key.toString(), stormConf.get(key).toString());
-			}
-		}
-		return conf;
-	}
-
 }

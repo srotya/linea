@@ -22,8 +22,17 @@ package com.srotya.linea;
  */
 public interface EventFactory {
 	
+	/**
+	 * Build Event object
+	 * @return event
+	 */
 	public Event buildEvent();
 	
+	/**
+	 * Build and return event object with supplied eventId
+	 * @param eventId
+	 * @return
+	 */
 	public Event buildEvent(String eventId);
 	
 }

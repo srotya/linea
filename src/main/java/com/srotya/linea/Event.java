@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.uuid.EthernetAddress;
 import com.fasterxml.uuid.Generators;
-import com.srotya.linea.utils.NetworkUtils;
+import com.srotya.linea.utils.NetUtils;
 
 /**
  * Event implementation.
@@ -44,7 +44,7 @@ public class Event implements Serializable {
 
 	static {
 		try {
-			RNG_ADDRESS = EthernetAddress.valueOf(NetworkUtils.selectDefaultIPAddress(false).getHardwareAddress());
+			RNG_ADDRESS = EthernetAddress.valueOf(NetUtils.selectDefaultIPAddress(false).getHardwareAddress());
 		} catch (NumberFormatException | SocketException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

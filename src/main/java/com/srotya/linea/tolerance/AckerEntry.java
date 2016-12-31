@@ -18,7 +18,7 @@ package com.srotya.linea.tolerance;
 import java.io.Serializable;
 
 /**
- * 
+ * Entry for tracking a tuple
  * 
  * @author ambud
  */

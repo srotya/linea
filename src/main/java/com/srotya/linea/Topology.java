@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -31,11 +32,14 @@ import com.srotya.linea.processors.Spout;
 import com.srotya.linea.tolerance.AckerBolt;
 
 /**
- * A simple topology builder
+ * Runnable representation of the Topology, this class is also used to
+ * orchestrate the build and wiring of topology. <br>
+ * <br>
+ * Class provides a fluent API to allow ease of development.
  * 
  * @author ambud
  */
-public class TopologyBuilder {
+public class Topology {
 
 	public static final String DEFAULT_ACKER_PARALLELISM = "1";
 	public static final String DEFAULT_DATA_PORT = "5000";
@@ -54,8 +58,31 @@ public class TopologyBuilder {
 	public static final String WORKER_BIND_ADDRESS = "worker.data.bindAddress";
 	public static final String DEFAULT_BIND_ADDRESS = "localhost";
 
-	public TopologyBuilder(Map<String, String> conf) throws Exception {
+	/**
+	 * Constructor with configuration properties
+	 * 
+	 * @param conf
+	 * @throws Exception
+	 */
+	public Topology(Map<String, String> conf) throws Exception {
 		this.conf = conf;
+		init();
+	}
+
+	public Topology(Properties props) throws Exception {
+		conf = new HashMap<>();
+		for (Entry<Object, Object> entry : props.entrySet()) {
+			conf.put(entry.getKey().toString(), entry.getValue().toString());
+		}
+		init();
+	}
+
+	/**
+	 * Initialize the Topology Builder
+	 * 
+	 * @throws Exception
+	 */
+	protected void init() throws Exception {
 		factory = new DisruptorUnifiedFactory();
 		executorMap = new HashMap<>();
 		ackerCount = Integer.parseInt(conf.getOrDefault(ACKER_PARALLELISM, DEFAULT_ACKER_PARALLELISM));
@@ -65,11 +92,29 @@ public class TopologyBuilder {
 		backgroundServices = Executors.newFixedThreadPool(1);
 	}
 
-	public TopologyBuilder addSpout(Spout spout, int parallelism) throws IOException, ClassNotFoundException {
+	/**
+	 * Add Spout with parallelism
+	 * 
+	 * @param spout
+	 * @param parallelism
+	 * @return topology builder
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
+	public Topology addSpout(Spout spout, int parallelism) throws IOException, ClassNotFoundException {
 		return addBolt(spout, parallelism);
 	}
 
-	public TopologyBuilder addBolt(Bolt bolt, int parallelism) throws IOException, ClassNotFoundException {
+	/**
+	 * Add Bolt with parallelism
+	 * 
+	 * @param bolt
+	 * @param parallelism
+	 * @return topology builder
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
+	public Topology addBolt(Bolt bolt, int parallelism) throws IOException, ClassNotFoundException {
 		byte[] serializeBoltInstance = BoltExecutor.serializeBoltInstance(bolt);
 		BoltExecutor boltExecutor = new BoltExecutor(conf, factory, serializeBoltInstance, columbus, parallelism,
 				router);
@@ -77,33 +122,64 @@ public class TopologyBuilder {
 		return this;
 	}
 
-	public TopologyBuilder start() throws Exception {
+	/**
+	 * Start this topology
+	 * 
+	 * @return topology builder
+	 * @throws Exception
+	 */
+	public Topology start() throws Exception {
+		final Topology self = this;
+		// attach shutdown hook to gracefully stop topology
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
+			public void run() {
+				try {
+					self.stop();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		});
+		// attach acker bolt
 		addBolt(new AckerBolt(), ackerCount);
+		// start columbus
 		backgroundServices.submit(() -> columbus.run());
+		// start router
 		router.start();
+		// start each bolt executor
 		for (Entry<String, BoltExecutor> entry : executorMap.entrySet()) {
 			entry.getValue().start();
 		}
 		return this;
 	}
 
-	public TopologyBuilder stop() throws Exception {
+	/**
+	 * Stop this topology
+	 * 
+	 * @return topology builder
+	 * @throws Exception
+	 */
+	public Topology stop() throws Exception {
+		// stop each bolt executor
 		for (Entry<String, BoltExecutor> entry : executorMap.entrySet()) {
 			entry.getValue().stop();
 		}
+		// stop router
 		router.stop();
 		return this;
 	}
 
 	/**
-	 * @return
+	 * @return factory
 	 */
 	public DisruptorUnifiedFactory getFactory() {
 		return factory;
 	}
 
 	/**
-	 * @return
+	 * @return router
 	 */
 	public Router getRouter() {
 		return router;

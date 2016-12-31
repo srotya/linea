@@ -20,7 +20,7 @@ import java.io.Serializable;
 /**
  * Mutable short for hash value edits
  * 
- * @author ambud_sharma
+ * @author ambud
  */
 public class MutableShort implements Serializable {
 

@@ -25,7 +25,7 @@ import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.srotya.linea.Event;
 import com.srotya.linea.MurmurHash;
-import com.srotya.linea.TopologyBuilder;
+import com.srotya.linea.Topology;
 import com.srotya.linea.clustering.Columbus;
 import com.srotya.linea.disruptor.CopyTranslator;
 import com.srotya.linea.disruptor.ROUTING_TYPE;
@@ -68,9 +68,9 @@ public class Router {
 		this.columbus = columbus;
 		this.workerCount = workerCount;
 		this.executorMap = executorMap;
-		this.bindAddress = conf.getOrDefault(TopologyBuilder.WORKER_BIND_ADDRESS, TopologyBuilder.DEFAULT_BIND_ADDRESS);
+		this.bindAddress = conf.getOrDefault(Topology.WORKER_BIND_ADDRESS, Topology.DEFAULT_BIND_ADDRESS);
 		this.dataPort = Integer
-				.parseInt(conf.getOrDefault(TopologyBuilder.WORKER_DATA_PORT, TopologyBuilder.DEFAULT_DATA_PORT));
+				.parseInt(conf.getOrDefault(Topology.WORKER_DATA_PORT, Topology.DEFAULT_DATA_PORT));
 	}
 
 	/**

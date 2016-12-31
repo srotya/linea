@@ -18,7 +18,7 @@ package com.srotya.linea.example;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.srotya.linea.TopologyBuilder;
+import com.srotya.linea.Topology;
 
 /**
  * Simple test topology to validate how Linea will launch and run pipelines and
@@ -32,11 +32,11 @@ public class SimpleTopology {
 
 	public static void main(String[] args) throws Exception {
 		Map<String, String> conf = new HashMap<>();
-		conf.put(TopologyBuilder.WORKER_ID, args[0]);
-		conf.put(TopologyBuilder.WORKER_COUNT, args[1]);
-		conf.put(TopologyBuilder.WORKER_DATA_PORT, args[2]);
-		conf.put(TopologyBuilder.ACKER_PARALLELISM, "1");
-		TopologyBuilder builder = new TopologyBuilder(conf);
-		builder = builder.addSpout(new TestSpout(10000000), 1).addBolt(new PrinterBolt(), 1).start();
+		conf.put(Topology.WORKER_ID, args[0]);
+		conf.put(Topology.WORKER_COUNT, args[1]);
+		conf.put(Topology.WORKER_DATA_PORT, args[2]);
+		conf.put(Topology.ACKER_PARALLELISM, "1");
+		Topology builder = new Topology(conf);
+		builder = builder.addSpout(new TestSpout(1000000), 1).addBolt(new PrinterBolt(), 1).start();
 	}
 }

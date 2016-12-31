@@ -31,10 +31,16 @@ import org.apache.zookeeper.data.Stat;
 
 import com.google.gson.Gson;
 import com.srotya.linea.clustering.ClusterKeeper;
+import com.srotya.linea.clustering.Columbus;
 import com.srotya.linea.clustering.WorkerEntry;
 
 /**
- * Zookeeper based {@link ClusterKeeper} implementation.
+ * Zookeeper based {@link ClusterKeeper} implementation. This implementation
+ * uses Apache Zookeeper to populate worker information across the swarm.<br>
+ * <br>
+ * Information is stored in a ZNode as JSON object (so it can be inspected
+ * manually) and is polled by {@link Columbus} periodically updating last ping
+ * times and worker availability.
  * 
  * @author ambud
  */

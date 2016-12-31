@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Logger;
 
 import com.srotya.linea.Event;
 import com.srotya.linea.disruptor.ROUTING_TYPE;
@@ -36,6 +37,7 @@ import com.srotya.linea.utils.Constants;
  */
 public class AckerBolt implements Bolt {
 
+	private static final Logger logger = Logger.getLogger(AckerBolt.class.getName());
 	private static final int PRINT_COUNT = 100000;
 	private static final long serialVersionUID = 1L;
 	public static final String ACKER_BOLT_NAME = "_acker";
@@ -75,25 +77,14 @@ public class AckerBolt implements Bolt {
 		} else {
 			Object sourceId = event.getHeaders().get(Constants.FIELD_GROUPBY_ROUTING_KEY);
 			String source = (String) event.getHeaders().get(Constants.FIELD_COMPONENT_NAME);
-			// if
-			// (event.getHeaders().containsKey(Constants.FIELD_DESTINATION_WORKER_ID))
-			// {
-			// if (ackerMap.get((Long) sourceId) == null &&
-			// !source.contains("Spout")) {
-			// System.out.println(
-			// "Network ack:" + event.getEventId() + "\t" + ackerMap.get((Long)
-			// sourceId) + "\t" + source);
-			// }
-			// }
-
-			// Object originalEventId =
-			// event.getHeaders().get(Constants.FIELD_AGGREGATION_KEY);
-
 			updateAckerMap(source, event.getHeaders().get(Constants.FIELD_TASK_ID), (Long) sourceId,
 					(Long) event.getHeaders().get(Constants.FIELD_AGGREGATION_VALUE));
 		}
 	}
 
+	/**
+	 * Expire events in the Map that have not yet received all the acks.
+	 */
 	public void expireEvents() {
 		Map<Long, AckerEntry> evictionEntries = ackerMap.rotate();
 		for (Entry<Long, AckerEntry> entry : evictionEntries.entrySet()) {
@@ -112,6 +103,9 @@ public class AckerBolt implements Bolt {
 	}
 
 	/**
+	 * Update Rotating map for this ack. This may lead to an updated XOR and if
+	 * the XOR value is 0 then results in an Ack Event to the source Spout.
+	 * 
 	 * @param source
 	 * @param sourceTaskId
 	 * @param sourceId
@@ -122,7 +116,7 @@ public class AckerBolt implements Bolt {
 		if (trackerValue == null) {
 			if (!source.contains("Spout")) {
 				// reject message
-				System.out.println("Incorrect event ordering:" + sourceId + "\t" + source + "\t" + "\t" + taskId);
+				logger.severe("Incorrect event ordering:" + sourceId + "\t" + source + "\t" + "\t" + taskId);
 				return;
 			}
 			// this is the first time we are seeing this event
@@ -135,12 +129,14 @@ public class AckerBolt implements Bolt {
 				// means event processing tree is complete
 				c++;
 				if (c % PRINT_COUNT == 0) {
-					System.out.println("acked " + PRINT_COUNT + ":" + taskId);
+					logger.info("Acked " + PRINT_COUNT + ":" + taskId);
 				}
-				// notify source that event's completely processed
+				logger.fine("Acking event:" + sourceId + "\t" + trackerValue.getSourceSpout());
 
 				// remove entry from ackerMap
 				ackerMap.remove(sourceId);
+
+				// notify source that event's completely processed
 				Event event = collector.getFactory().buildEvent();
 				event.setOriginEventId(sourceId);
 				event.getHeaders().put(Constants.FIELD_GROUPBY_ROUTING_KEY, sourceId);
@@ -151,6 +147,15 @@ public class AckerBolt implements Bolt {
 		}
 	}
 
+	/**
+	 * Rotating map is used to efficiently track different acker entries for a
+	 * timed eviction of expired events.
+	 * 
+	 * @author ambud
+	 *
+	 * @param <K>
+	 * @param <V>
+	 */
 	public static class RotatingMap<K, V> {
 
 		private LinkedList<Map<K, V>> buckets;

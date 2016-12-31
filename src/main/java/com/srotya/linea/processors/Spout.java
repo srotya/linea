@@ -42,8 +42,6 @@ public abstract class Spout implements Bolt {
 		}
 	}
 	
-	public abstract void ready();
-	
 	/**
 	 * Marking eventId as processed
 	 * @param eventId

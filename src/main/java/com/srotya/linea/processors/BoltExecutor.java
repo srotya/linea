@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.EventHandler;
@@ -39,12 +40,13 @@ import com.srotya.linea.network.Router;
 import com.srotya.linea.tolerance.Collector;
 
 /**
- * Bolt Executor is wrapper that instantiates and executes bolt code.
+ * {@link Bolt} Executor is wrapper that instantiates and executes bolt code.
  * 
  * @author ambud
  */
 public class BoltExecutor {
 
+	private static final Logger logger = Logger.getLogger(BoltExecutor.class.getName());
 	private ExecutorService es;
 	private Bolt templateBoltInstance;
 	private Map<Integer, BoltExecutorWrapper> taskProcessorMap;
@@ -120,7 +122,7 @@ public class BoltExecutor {
 			entry.getValue().stop();
 		}
 		es.shutdownNow();
-		es.awaitTermination(100, TimeUnit.SECONDS);
+		es.awaitTermination(1000, TimeUnit.MILLISECONDS);
 	}
 
 	/**
@@ -164,9 +166,8 @@ public class BoltExecutor {
 		if (wrapper != null) {
 			wrapper.getBuffer().publishEvent(copyTranslator, event);
 		} else {
-			// System.out.println("Executor not found for:" + taskId + "\t" +
-			// columbus.getSelfWorkerId() + "\t"
-			// + taskProcessorMap + "\t" + event);
+			logger.severe("Executor not found for:" + taskId + "\t" + columbus.getSelfWorkerId() + "\t"
+					+ taskProcessorMap + "\t" + event);
 		}
 	}
 

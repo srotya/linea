@@ -1,5 +1,5 @@
 /**
-FIELD_COMPONENT_NAME * Copyright 2016 Ambud Sharma
+ * Copyright 2016 Ambud Sharma
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,24 @@ FIELD_COMPONENT_NAME * Copyright 2016 Ambud Sharma
  */
 package com.srotya.linea.tolerance;
 
+import java.util.Map;
+
 import com.srotya.linea.Event;
 import com.srotya.linea.EventFactory;
 import com.srotya.linea.network.Router;
 import com.srotya.linea.utils.Constants;
 
 /**
+ * A collector is responsible for gather events and acks that need to
+ * transmitted out of a bolt/spout. Collector is essentially a bridge between a
+ * Bolt and {@link Router} and performs some necessary enrichment of information
+ * for correct routing.<br>
+ * <br>
+ * Collector also provides Event factory that can be used to create new events.
+ * <br>
+ * <br>
+ * There is a collector object per Bolt Instance.
+ * 
  * @author ambud
  */
 public class Collector {
@@ -31,6 +43,12 @@ public class Collector {
 	private EventFactory factory;
 	private Router router;
 
+	/**
+	 * @param factory
+	 * @param router
+	 * @param lComponentId
+	 * @param taskId
+	 */
 	public Collector(EventFactory factory, Router router, String lComponentId, int taskId) {
 		this.factory = factory;
 		this.router = router;
@@ -38,12 +56,25 @@ public class Collector {
 		this.lTaskId = taskId;
 	}
 
+	/**
+	 * Ack event
+	 * 
+	 * @param event
+	 */
 	public void ack(Event event) {
 		for (Long sourceEventId : event.getSourceIds()) {
 			ack(lComponentId, sourceEventId, event.getEventId(), lTaskId);
 		}
 	}
 
+	/**
+	 * Collector internal ack method.
+	 * 
+	 * @param spoutName
+	 * @param sourceEventId
+	 * @param currentEventId
+	 * @param taskId
+	 */
 	protected void ack(String spoutName, Long sourceEventId, Long currentEventId, Integer taskId) {
 		Event event = factory.buildEvent();
 		event.setOriginEventId(sourceEventId);
@@ -65,10 +96,22 @@ public class Collector {
 	public void emitDirect(String nextProcessor, Integer destinationTaskId, Event event) {
 		event.getHeaders().put(Constants.FIELD_TASK_ID, lTaskId);
 		event.getHeaders().put(Constants.FIELD_COMPONENT_NAME, lComponentId);
- 		router.routeToTaskId(nextProcessor, event, null, destinationTaskId);
+		router.routeToTaskId(nextProcessor, event, null, destinationTaskId);
 	}
 
-	public void emit(String nextProcessorId, Event outputEvent, Event anchorEvent) {
+	public void emit(String nextProcessorId, Map<String, String> outputEventHeaders, Event anchorEvent) {
+		Event outputEvent = factory.buildEvent();
+		outputEvent.getHeaders().putAll(outputEventHeaders);
+		outputEvent.setOriginEventId(anchorEvent.getOriginEventId());
+		outputEvent.getSourceIds().add(anchorEvent.getOriginEventId());
+		outputEvent.getHeaders().put(Constants.FIELD_TASK_ID, lTaskId);
+		outputEvent.getHeaders().put(Constants.FIELD_COMPONENT_NAME, lComponentId);
+		ack((String) anchorEvent.getHeaders().get(Constants.FIELD_COMPONENT_NAME), anchorEvent.getOriginEventId(),
+				outputEvent.getEventId(), (Integer) anchorEvent.getHeaders().get(Constants.FIELD_TASK_ID));
+		router.routeEvent(nextProcessorId, outputEvent);
+	}
+
+	protected void emit(String nextProcessorId, Event outputEvent, Event anchorEvent) {
 		outputEvent.setOriginEventId(anchorEvent.getOriginEventId());
 		outputEvent.getSourceIds().add(anchorEvent.getOriginEventId());
 		outputEvent.getHeaders().put(Constants.FIELD_TASK_ID, lTaskId);
@@ -93,6 +136,9 @@ public class Collector {
 	// router.routeEvent(nextProcessorId, outputEvent);
 	// }
 
+	/**
+	 * @return factory
+	 */
 	public EventFactory getFactory() {
 		return factory;
 	}
