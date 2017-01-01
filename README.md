@@ -74,18 +74,3 @@ Linea is fundamentally built with containerization in mind and it's recommended 
 
 Linea is a framework, it's not an end-product in itself i.e. you can't run a Linea cluster by itself. It's like dropwizard, spring framework, vert.x etc. therefore there is no multi-tenancy or resource sharing support. The deployment mechanism is responsible for resource multi-tenancy similar to microservices.
 
-## Components
-
-`Event`: Linea's version of a Storm Tuple
-
-`Bolt`: Custom code to execute
-
-`BoltExecutor`: Operates a collection of Bolt instances in parallel
-
-`Router`: Responsible for Routing events to the correct bolt instance across workers
-
-`Acker`: A special Bolt that uses GROUPBY Routing Type
-
-`ROUTING_TYPE`: Linea's version of Storm Grouping
-
-`Columbus`: A gossip based worker discovery service
