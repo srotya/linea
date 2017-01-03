@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Ambud Sharma
+ * Copyright 2017 Ambud Sharma
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,7 +127,7 @@ public class Collector {
 	 * @param outputEventHeaders
 	 * @param anchorEvent
 	 */
-	public void emit(String nextProcessorId, Map<String, String> outputEventHeaders, Event anchorEvent) {
+	public void emit(String nextProcessorId, Map<String, Object> outputEventHeaders, Event anchorEvent) {
 		Event outputEvent = factory.buildEvent();
 		outputEvent.getHeaders().putAll(outputEventHeaders);
 		outputEvent.setOriginEventId(anchorEvent.getOriginEventId());

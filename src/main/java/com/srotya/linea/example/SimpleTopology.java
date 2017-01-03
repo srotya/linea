@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Ambud Sharma
+ * Copyright 2017 Ambud Sharma
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,6 @@ public class SimpleTopology {
 		conf.put(Topology.WORKER_DATA_PORT, args[2]);
 		conf.put(Topology.ACKER_PARALLELISM, "1");
 		Topology builder = new Topology(conf);
-		builder = builder.addSpout(new TestSpout(1000000), 1).addBolt(new PrinterBolt(), 1).start();
+		builder = builder.addSpout(new TestSpout(1000000), 1).addBolt(new TransformBolt(), 1).addBolt(new PrinterBolt(), 1).start();
 	}
 }

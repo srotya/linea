@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Ambud Sharma
+ * Copyright 2017 Ambud Sharma
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,13 +153,13 @@ public class Router {
 		case GROUPBY:
 			Object key = event.getHeaders().get(Constants.FIELD_GROUPBY_ROUTING_KEY);
 			if (key != null) {
-				taskId = Math.abs(MurmurHash.hash32(key.toString()) % totalParallelism);
 //				if (event.getSourceWorkerId() == getSelfWorkerId()) {
 //					taskId = nextBolt.getParallelism() * columbus.getSelfWorkerId()
 //							+ Math.abs((MurmurHash.hash32(key.toString()) % nextBolt.getParallelism()));
 //				} else {
-//					
+//					taskId = Math.abs(MurmurHash.hash32(key.toString()) % totalParallelism);
 //				}
+				taskId = Math.abs(MurmurHash.hash32(key.toString()) % totalParallelism);
 			} else {
 				System.err.println("Droping event, missing field group by:" + nextBoltId);
 				// discard event

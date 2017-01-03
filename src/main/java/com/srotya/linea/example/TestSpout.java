@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Ambud Sharma
+ * Copyright 2017 Ambud Sharma
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class TestSpout extends Spout {
 			Event event = collector.getFactory().buildEvent(taskId + "_" + i);
 			event.getHeaders().put("uuid", taskId + "host" + i);
 			emittedEvents.add(event.getEventId());
-			collector.spoutEmit("jsonbolt", event);
+			collector.spoutEmit("transformBolt", event);
 			if (i % 100000 == 0) {
 				System.err.println("Produced " + i + " events:" + taskId);
 			}

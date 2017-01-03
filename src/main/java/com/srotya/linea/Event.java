@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Ambud Sharma
+ * Copyright 2017 Ambud Sharma
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ public class Event implements Serializable {
 	private static EthernetAddress RNG_ADDRESS;
 	public static final int AVG_EVENT_FIELD_COUNT = Integer.parseInt(System.getProperty("event.field.count", "40"));
 	private static final long serialVersionUID = 1L;
-	private int sourceWorkerId;
+	private int sourceWorkerId = -1;
 	private Long originEventId;
 	private List<Long> sourceIds;
 	private Long eventId;

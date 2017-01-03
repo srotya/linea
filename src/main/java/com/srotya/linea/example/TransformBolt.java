@@ -13,50 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.linea.processors;
+package com.srotya.linea.example;
+
+import java.util.Map;
 
 import com.srotya.linea.Event;
 import com.srotya.linea.disruptor.ROUTING_TYPE;
-import com.srotya.linea.utils.Constants;
+import com.srotya.linea.processors.Bolt;
+import com.srotya.linea.tolerance.Collector;
 
 /**
- * Spout is a type of {@link Bolt} that generates data that is processed
- * by the rest of the topology.
- * 
  * @author ambud
  */
-public abstract class Spout implements Bolt {
+public class TransformBolt implements Bolt {
 
 	private static final long serialVersionUID = 1L;
+	private transient Collector collector;
+
+	@Override
+	public void configure(Map<String, String> conf, int instanceId, Collector collector) {
+		this.collector = collector;
+	}
+
+	@Override
+	public void ready() {
+	}
 
 	@Override
 	public void process(Event event) {
-		Object object = event.getHeaders().get(Constants.FIELD_GROUPBY_ROUTING_KEY);
-		if(object!=null) {
-			Boolean type = (Boolean) event.getHeaders().get(Constants.FIELD_EVENT_TYPE);
-			if(type) {
-				ack((Long)object);
-			}else {
-				fail((Long)object);
-			}
-		}
+		Map<String, Object> headers = event.getHeaders();
+		headers.put("fieldtransform", 2231);
+		collector.emit("printerBolt", headers, event);
+		collector.ack(event);
 	}
-	
-	/**
-	 * Marking eventId as processed
-	 * @param eventId
-	 */
-	public abstract void ack(Long eventId);
-	
-	/**
-	 * Marking eventId as failed
-	 * @param eventId
-	 */
-	public abstract void fail(Long eventId);
-	
+
 	@Override
 	public ROUTING_TYPE getRoutingType() {
-		return ROUTING_TYPE.GROUPBY;
+		return ROUTING_TYPE.SHUFFLE;
+	}
+
+	@Override
+	public String getBoltName() {
+		return "transformBolt";
 	}
 
 }
