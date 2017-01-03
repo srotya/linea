@@ -69,8 +69,7 @@ public class Router {
 		this.workerCount = workerCount;
 		this.executorMap = executorMap;
 		this.bindAddress = conf.getOrDefault(Topology.WORKER_BIND_ADDRESS, Topology.DEFAULT_BIND_ADDRESS);
-		this.dataPort = Integer
-				.parseInt(conf.getOrDefault(Topology.WORKER_DATA_PORT, Topology.DEFAULT_DATA_PORT));
+		this.dataPort = Integer.parseInt(conf.getOrDefault(Topology.WORKER_DATA_PORT, Topology.DEFAULT_DATA_PORT));
 	}
 
 	/**
@@ -155,15 +154,23 @@ public class Router {
 			Object key = event.getHeaders().get(Constants.FIELD_GROUPBY_ROUTING_KEY);
 			if (key != null) {
 				taskId = Math.abs(MurmurHash.hash32(key.toString()) % totalParallelism);
+//				if (event.getSourceWorkerId() == getSelfWorkerId()) {
+//					taskId = nextBolt.getParallelism() * columbus.getSelfWorkerId()
+//							+ Math.abs((MurmurHash.hash32(key.toString()) % nextBolt.getParallelism()));
+//				} else {
+//					
+//				}
 			} else {
 				System.err.println("Droping event, missing field group by:" + nextBoltId);
 				// discard event
 			}
 			break;
 		case SHUFFLE:
-			// taskId = columbus.getSelfWorkerId() * totalParallelism
-			// + (Math.abs((int) (event.getEventId() % totalParallelism)));
-			taskId = Math.abs((int) (event.getEventId() % totalParallelism));
+			// taskId = Math.abs((int) (event.getEventId() % totalParallelism));
+
+			// adding local only shuffling to reduce network traffic
+			taskId = nextBolt.getParallelism() * columbus.getSelfWorkerId()
+					+ Math.abs((int) (event.getEventId() % nextBolt.getParallelism()));
 			break;
 		}
 
@@ -197,6 +204,15 @@ public class Router {
 			event.getHeaders().put(Constants.FIELD_DESTINATION_WORKER_ID, destinationWorker);
 			networkTranmissionDisruptor.publishEvent(translator, event);
 		}
+	}
+
+	/**
+	 * Proxy method to get self worker id
+	 * 
+	 * @return self worker id
+	 */
+	public int getSelfWorkerId() {
+		return columbus.getSelfWorkerId();
 	}
 
 	/**

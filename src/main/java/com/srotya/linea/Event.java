@@ -37,6 +37,7 @@ public class Event implements Serializable {
 	private static EthernetAddress RNG_ADDRESS;
 	public static final int AVG_EVENT_FIELD_COUNT = Integer.parseInt(System.getProperty("event.field.count", "40"));
 	private static final long serialVersionUID = 1L;
+	private int sourceWorkerId;
 	private Long originEventId;
 	private List<Long> sourceIds;
 	private Long eventId;
@@ -131,6 +132,20 @@ public class Event implements Serializable {
 	 */
 	public void setOriginEventId(Long originEventId) {
 		this.originEventId = originEventId;
+	}
+
+	/**
+	 * @return the sourceWorkerId
+	 */
+	public int getSourceWorkerId() {
+		return sourceWorkerId;
+	}
+
+	/**
+	 * @param sourceWorkerId the sourceWorkerId to set
+	 */
+	public void setSourceWorkerId(int sourceWorkerId) {
+		this.sourceWorkerId = sourceWorkerId;
 	}
 
 	/* (non-Javadoc)

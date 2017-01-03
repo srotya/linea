@@ -42,6 +42,7 @@ public class Collector {
 	private String lComponentId;
 	private EventFactory factory;
 	private Router router;
+	private int workerId;
 
 	/**
 	 * @param factory
@@ -54,6 +55,7 @@ public class Collector {
 		this.router = router;
 		this.lComponentId = lComponentId;
 		this.lTaskId = taskId;
+		this.workerId = router.getSelfWorkerId();
 	}
 
 	/**
@@ -98,6 +100,7 @@ public class Collector {
 		event.getHeaders().put(Constants.FIELD_COMPONENT_NAME, lComponentId);
 		event.getHeaders().put(Constants.FIELD_TASK_ID, lTaskId);
 		event.setOriginEventId(event.getEventId());
+		event.setSourceWorkerId(workerId);
 		emit(nextProcessorId, event, event);
 	}
 
