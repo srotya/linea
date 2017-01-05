@@ -28,9 +28,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.srotya.linea.Event;
@@ -201,7 +201,7 @@ public class BoltExecutor {
 		public BoltExecutorWrapper(DisruptorUnifiedFactory factory, ExecutorService pool, Bolt processor) {
 			this.pool = pool;
 			this.bolt = processor;
-			disruptor = new Disruptor<>(factory, 1024 * 8, pool, ProducerType.MULTI, new BlockingWaitStrategy());
+			disruptor = new Disruptor<>(factory, 1024 * 8, pool, ProducerType.MULTI, new YieldingWaitStrategy());
 			disruptor.handleEventsWith(this);
 		}
 

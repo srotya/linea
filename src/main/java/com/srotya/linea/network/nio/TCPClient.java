@@ -38,9 +38,13 @@ public class TCPClient implements EventHandler<Event> {
 	private static final Logger logger = Logger.getLogger(TCPClient.class.getName());
 	private Map<Integer, OutputStream> socketMap;
 	private Columbus columbus;
+	private int clientThreads;
+	private int clientThreadId;
 
-	public TCPClient(Columbus columbus) {
+	public TCPClient(Columbus columbus, int clientThreadId, int clientThreads) {
 		this.columbus = columbus;
+		this.clientThreadId = clientThreadId;
+		this.clientThreads = clientThreads;
 		socketMap = new HashMap<>();
 	}
 
@@ -56,7 +60,7 @@ public class TCPClient implements EventHandler<Event> {
 						socket.setSendBufferSize(1048576);
 						socket.setKeepAlive(true);
 						socket.setPerformancePreferences(0, 1, 2);
-						socketMap.put(entry.getKey(), new BufferedOutputStream(socket.getOutputStream(), 8192*4));
+						socketMap.put(entry.getKey(), new BufferedOutputStream(socket.getOutputStream(), 8192 * 4));
 						connected = true;
 					} catch (Exception e) {
 						logger.warning("Worker connection refused:" + entry.getValue().getWorkerAddress()
@@ -73,11 +77,13 @@ public class TCPClient implements EventHandler<Event> {
 	@Override
 	public void onEvent(Event event, long sequence, boolean endOfBatch) throws Exception {
 		Integer workerId = (Integer) event.getHeaders().get(Constants.FIELD_DESTINATION_WORKER_ID);
-		OutputStream stream = socketMap.get(workerId);
-		byte[] bytes = KryoObjectEncoder.eventToByteArray(event);
-		stream.write(bytes);
-		if (endOfBatch) {
-			stream.flush();
+		if (workerId % clientThreads == clientThreadId) {
+			OutputStream stream = socketMap.get(workerId);
+			byte[] bytes = KryoObjectEncoder.eventToByteArray(event);
+			stream.write(bytes);
+			if (endOfBatch) {
+				stream.flush();
+			}
 		}
 	}
 

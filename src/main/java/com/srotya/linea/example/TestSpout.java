@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.srotya.linea.Event;
 import com.srotya.linea.processors.Spout;
 import com.srotya.linea.tolerance.Collector;
+import com.srotya.linea.utils.Constants;
 
 /**
  * @author ambud
@@ -62,8 +63,9 @@ public class TestSpout extends Spout {
 		for (int i = 0; i < messageCount; i++) {
 			Event event = collector.getFactory().buildEvent(taskId + "_" + i);
 			event.getHeaders().put("uuid", taskId + "host" + i);
+			event.getHeaders().put(Constants.FIELD_GROUPBY_ROUTING_KEY, "host"+i);
 			emittedEvents.add(event.getEventId());
-			collector.spoutEmit("transformBolt", event);
+			collector.spoutEmit("printerBolt", event);
 			if (i % 100000 == 0) {
 				System.err.println("Produced " + i + " events:" + taskId);
 			}

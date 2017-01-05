@@ -15,12 +15,14 @@
  */
 package com.srotya.linea.network;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
-import com.lmax.disruptor.BlockingWaitStrategy;
+import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.srotya.linea.Event;
@@ -53,8 +55,10 @@ public class Router {
 	private int workerCount;
 	private ExecutorService pool;
 	private int dataPort;
-	private TCPClient client;
+	// private TCPClient client;
+	private List<TCPClient> clients;
 	private String bindAddress;
+	private int clientThreadCount;
 
 	/**
 	 * @param factory
@@ -70,6 +74,7 @@ public class Router {
 		this.executorMap = executorMap;
 		this.bindAddress = conf.getOrDefault(Topology.WORKER_BIND_ADDRESS, Topology.DEFAULT_BIND_ADDRESS);
 		this.dataPort = Integer.parseInt(conf.getOrDefault(Topology.WORKER_DATA_PORT, Topology.DEFAULT_DATA_PORT));
+		this.clientThreadCount = Integer.parseInt(conf.getOrDefault(Topology.CLIENT_THREAD_COUNT, "1"));
 	}
 
 	/**
@@ -77,9 +82,8 @@ public class Router {
 	 * 
 	 * @throws Exception
 	 */
-	@SuppressWarnings("unchecked")
 	public void start() throws Exception {
-		pool = Executors.newFixedThreadPool(2);
+		pool = Executors.newFixedThreadPool(1 + clientThreadCount);
 		server = new TCPServer(this, bindAddress, dataPort);
 		pool.submit(() -> {
 			try {
@@ -95,11 +99,14 @@ public class Router {
 		}
 
 		networkTranmissionDisruptor = new Disruptor<Event>(factory, 1024 * 8, pool, ProducerType.MULTI,
-				new BlockingWaitStrategy());
-		client = new TCPClient(getColumbus());
-		client.start();
-
-		networkTranmissionDisruptor.handleEventsWith(client);
+				new YieldingWaitStrategy());
+		clients = new ArrayList<>(clientThreadCount);
+		for (int i = 0; i < clientThreadCount; i++) {
+			TCPClient client = new TCPClient(getColumbus(), i, clientThreadCount);
+			client.start();
+			clients.add(client);
+		}
+		networkTranmissionDisruptor.handleEventsWith(clients.toArray(new TCPClient[1]));
 		networkTranmissionDisruptor.start();
 		translator = new CopyTranslator();
 	}
@@ -153,12 +160,6 @@ public class Router {
 		case GROUPBY:
 			Object key = event.getHeaders().get(Constants.FIELD_GROUPBY_ROUTING_KEY);
 			if (key != null) {
-//				if (event.getSourceWorkerId() == getSelfWorkerId()) {
-//					taskId = nextBolt.getParallelism() * columbus.getSelfWorkerId()
-//							+ Math.abs((MurmurHash.hash32(key.toString()) % nextBolt.getParallelism()));
-//				} else {
-//					taskId = Math.abs(MurmurHash.hash32(key.toString()) % totalParallelism);
-//				}
 				taskId = Math.abs(MurmurHash.hash32(key.toString()) % totalParallelism);
 			} else {
 				System.err.println("Droping event, missing field group by:" + nextBoltId);

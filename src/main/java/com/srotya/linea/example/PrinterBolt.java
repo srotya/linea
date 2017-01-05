@@ -29,9 +29,12 @@ public class PrinterBolt implements Bolt {
 
 	private static final long serialVersionUID = 1L;
 	private transient Collector collector;
+	@SuppressWarnings("unused")
+	private transient int taskId;
 
 	@Override
 	public void configure(Map<String, String> conf, int taskId, Collector collector) {
+		this.taskId = taskId;
 		this.collector = collector;
 
 	}
@@ -44,7 +47,7 @@ public class PrinterBolt implements Bolt {
 
 	@Override
 	public ROUTING_TYPE getRoutingType() {
-		return ROUTING_TYPE.SHUFFLE;
+		return ROUTING_TYPE.GROUPBY;
 	}
 
 	@Override

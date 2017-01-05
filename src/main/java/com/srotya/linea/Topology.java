@@ -57,6 +57,7 @@ public class Topology {
 	public static final String WORKER_DATA_PORT = "worker.data.port";
 	public static final String WORKER_BIND_ADDRESS = "worker.data.bindAddress";
 	public static final String DEFAULT_BIND_ADDRESS = "localhost";
+	public static final Object CLIENT_THREAD_COUNT = "client.thread.count";
 
 	/**
 	 * Constructor with configuration properties
