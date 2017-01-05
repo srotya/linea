@@ -16,6 +16,7 @@
 package com.srotya.linea.network.nio;
 
 import java.io.BufferedOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.HashMap;
@@ -51,38 +52,64 @@ public class TCPClient implements EventHandler<Event> {
 	public void start() throws Exception {
 		for (Entry<Integer, WorkerEntry> entry : columbus.getWorkerMap().entrySet()) {
 			if (entry.getKey() != columbus.getSelfWorkerId()) {
-				boolean connected = false;
-				int retryCount = 1;
-				while (!connected && retryCount < 10) {
-					try {
-						@SuppressWarnings("resource")
-						Socket socket = new Socket(entry.getValue().getWorkerAddress(), entry.getValue().getDataPort());
-						socket.setSendBufferSize(1048576);
-						socket.setKeepAlive(true);
-						socket.setPerformancePreferences(0, 1, 2);
-						socketMap.put(entry.getKey(), new BufferedOutputStream(socket.getOutputStream(), 8192 * 4));
-						connected = true;
-					} catch (Exception e) {
-						logger.warning("Worker connection refused:" + entry.getValue().getWorkerAddress()
-								+ ". Retrying in " + retryCount + " seconds.....");
-						retryCount++;
-						Thread.sleep(1000 * retryCount);
-					}
-
-				}
+				Integer key = entry.getKey();
+				WorkerEntry value = entry.getValue();
+				retryConnectLoop(key, value);
 			}
 		}
+	}
+
+	private void retryConnectLoop(Integer key, WorkerEntry value) throws InterruptedException, IOException {
+		boolean connected = false;
+		int retryCount = 1;
+		while (!connected && retryCount < 100) {
+			Socket socket = tryConnect(value, retryCount);
+			if (socket != null) {
+				connected = true;
+				socketMap.put(key, new BufferedOutputStream(socket.getOutputStream(), 8192 * 4));
+			}
+		}
+	}
+
+	private Socket tryConnect(WorkerEntry value, int retryCount) throws InterruptedException {
+		try {
+			Socket socket = new Socket(value.getWorkerAddress(), value.getDataPort());
+			socket.setSendBufferSize(1048576);
+			socket.setKeepAlive(true);
+			socket.setPerformancePreferences(0, 1, 2);
+			return socket;
+		} catch (Exception e) {
+			logger.warning("Worker connection refused:" + value.getWorkerAddress() + ". Retrying in " + retryCount
+					+ " seconds.....");
+			retryCount++;
+			Thread.sleep(1000 * retryCount);
+		}
+		return null;
 	}
 
 	@Override
 	public void onEvent(Event event, long sequence, boolean endOfBatch) throws Exception {
 		Integer workerId = (Integer) event.getHeaders().get(Constants.FIELD_DESTINATION_WORKER_ID);
-		if (workerId % clientThreads == clientThreadId) {
-			OutputStream stream = socketMap.get(workerId);
-			byte[] bytes = KryoObjectEncoder.eventToByteArray(event);
-			stream.write(bytes);
-			if (endOfBatch) {
-				stream.flush();
+		try {
+			if (workerId % clientThreads == clientThreadId) {
+				OutputStream stream = socketMap.get(workerId);
+				byte[] bytes = KryoObjectEncoder.eventToByteArray(event);
+				stream.write(bytes);
+				if (endOfBatch) {
+					stream.flush();
+				}
+			}
+		} catch (IOException e) {
+			WorkerEntry entry = columbus.getWorkerMap().get(workerId);
+			logger.severe("Lost worker connection to WorkerId:"+workerId+"\tAddress:"+entry.getWorkerAddress());
+			retryConnectLoop(workerId, entry);
+			if (workerId % clientThreads == clientThreadId) {
+				OutputStream stream = socketMap.get(workerId);
+				byte[] bytes = KryoObjectEncoder.eventToByteArray(event);
+				stream.write(bytes);
+				if (endOfBatch) {
+					stream.flush();
+				}
 			}
 		}
 	}

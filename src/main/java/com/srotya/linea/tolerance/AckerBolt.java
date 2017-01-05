@@ -116,7 +116,7 @@ public class AckerBolt implements Bolt {
 		if (trackerValue == null) {
 			if (!source.contains("Spout")) {
 				// reject message
-				logger.severe("Incorrect event ordering:" + sourceId + "\t" + source + "\t" + "\t" + taskId);
+				logger.fine("Incorrect event ordering:" + sourceId + "\t" + source + "\t" + "\t" + taskId);
 				return;
 			}
 			// this is the first time we are seeing this event
