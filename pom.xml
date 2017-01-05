@@ -7,7 +7,7 @@
     <version>0.5.6</version>
   </parent>
   <artifactId>linea</artifactId>
-  <version>0.0.14</version>
+  <version>0.0.15-SNAPSHOT</version>
   <name>linea</name>
   <properties>
     <disruptor.version>3.3.2</disruptor.version>
@@ -154,6 +154,6 @@
     <connection>scm:git:git@github.com:srotya/linea.git</connection>
     <developerConnection>scm:git:git@github.com:srotya/linea.git</developerConnection>
     <url>https://github.com/srotya/linea.git</url>
-    <tag>linea-0.0.14</tag>
+    <tag>HEAD</tag>
   </scm>
 </project>
