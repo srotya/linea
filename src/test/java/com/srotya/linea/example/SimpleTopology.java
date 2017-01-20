@@ -48,7 +48,8 @@ public class SimpleTopology {
 		@Override
 		public void translateTo(Event outputEvent, long sequence, Event inputEvent) {
 			outputEvent.getHeaders().clear();
-			outputEvent.setSourceIds(inputEvent.getSourceIds());
+			outputEvent.getSourceIds().clear();
+			outputEvent.getSourceIds().addAll(inputEvent.getSourceIds());
 			outputEvent.setEventId(inputEvent.getEventId());
 			outputEvent.setSourceWorkerId(inputEvent.getSourceWorkerId());
 			outputEvent.setOriginEventId(inputEvent.getOriginEventId());

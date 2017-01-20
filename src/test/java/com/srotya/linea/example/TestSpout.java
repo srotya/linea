@@ -64,8 +64,8 @@ public class TestSpout extends Spout<Event> {
 				break;
 			}
 			Event event = (Event) collector.getFactory().buildEvent(taskId + "_" + i);
+			event.setGroupByKey("host"+i);
 			event.getHeaders().put("uuid", taskId + "host" + i);
-			event.getHeaders().put(Constants.FIELD_GROUPBY_ROUTING_KEY, "host"+i);
 			emittedEvents.add(event.getEventId());
 			collector.spoutEmit("printerBolt", event);
 			if (i % 100000 == 0) {
@@ -100,14 +100,14 @@ public class TestSpout extends Spout<Event> {
 	}
 
 	@Override
-	public void ack(long eventId) {
+	public void ack(Long eventId) {
 		// boolean removed = false;
 		emittedEvents.remove(eventId);
 		c++;
 	}
 
 	@Override
-	public void fail(long eventId) {
+	public void fail(Long eventId) {
 		System.out.println("Spout failing event:" + eventId);
 	}
 

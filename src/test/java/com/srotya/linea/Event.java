@@ -16,14 +16,13 @@
 package com.srotya.linea;
 
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.uuid.EthernetAddress;
 import com.fasterxml.uuid.Generators;
-import com.srotya.linea.MurmurHash;
-import com.srotya.linea.Tuple;
 import com.srotya.linea.example.Constants;
 import com.srotya.linea.utils.NetUtils;
 
@@ -34,13 +33,11 @@ public class Event implements Tuple {
 
 	private static EthernetAddress RNG_ADDRESS;
 	public static final int AVG_EVENT_FIELD_COUNT = Integer.parseInt(System.getProperty("event.field.count", "40"));
-	private int sourceWorkerId = -1;
 	private long originEventId;
-	private long[] sourceIds;
-	private int srcIdIndex;
+	private List<Long> sourceIds;
 	private long eventId;
 	private Map<String, Object> headers;
-	private long workerId;
+	private long sourceWorkerId = -1;
 
 	static {
 		try {
@@ -52,21 +49,16 @@ public class Event implements Tuple {
 	}
 
 	public Event(String eventId) {
-		this.eventId = MurmurHash.hash64(eventId);
-		sourceIds = new long[10];
-		headers = new HashMap<>(AVG_EVENT_FIELD_COUNT);
+		this();
+		// this.eventId = MurmurHash.hash64(eventId);
+		// sourceIds = new ArrayList<>();
+		// headers = new HashMap<>(AVG_EVENT_FIELD_COUNT);
 	}
 
 	public Event() {
 		eventId = Generators.timeBasedGenerator(RNG_ADDRESS).generate().getMostSignificantBits();// UUID.randomUUID().getMostSignificantBits();
-		sourceIds = new long[10];
+		sourceIds = new ArrayList<>();
 		headers = new HashMap<>(AVG_EVENT_FIELD_COUNT);
-	}
-
-	Event(Map<String, Object> headers) {
-		eventId = Generators.timeBasedGenerator(RNG_ADDRESS).generate().getMostSignificantBits();// UUID.randomUUID().getMostSignificantBits();
-		sourceIds = new long[10];
-		this.headers = headers;
 	}
 
 	/**
@@ -81,71 +73,6 @@ public class Event implements Tuple {
 	 */
 	public void setHeaders(Map<String, Object> headers) {
 		this.headers = headers;
-	}
-
-	/**
-	 * @return
-	 */
-	public static Map<String, Object> getMapInstance() {
-		return new ConcurrentHashMap<>(AVG_EVENT_FIELD_COUNT);
-	}
-
-	/**
-	 * @return
-	 */
-	public long getEventId() {
-		return eventId;
-	}
-
-	/**
-	 * @param eventId
-	 */
-	public void setEventId(Long eventId) {
-		this.eventId = eventId;
-	}
-
-	/**
-	 * @return
-	 */
-	public long[] getSourceIds() {
-		return sourceIds;
-	}
-
-	/**
-	 * @param sourceIds
-	 */
-	public void setSourceIds(long[] sourceIds) {
-		this.sourceIds = sourceIds;
-	}
-
-	/**
-	 * @return the originEventId
-	 */
-	public long getOriginEventId() {
-		return originEventId;
-	}
-
-	/**
-	 * @param originEventId
-	 *            the originEventId to set
-	 */
-	public void setOriginEventId(Long originEventId) {
-		this.originEventId = originEventId;
-	}
-
-	/**
-	 * @return the sourceWorkerId
-	 */
-	public int getSourceWorkerId() {
-		return sourceWorkerId;
-	}
-
-	/**
-	 * @param sourceWorkerId
-	 *            the sourceWorkerId to set
-	 */
-	public void setSourceWorkerId(int sourceWorkerId) {
-		this.sourceWorkerId = sourceWorkerId;
 	}
 
 	/*
@@ -240,24 +167,38 @@ public class Event implements Tuple {
 	}
 
 	@Override
-	public void addSourceId(long id) {
-		sourceIds[srcIdIndex] = id;
-		srcIdIndex++;
-	}
-
-	@Override
 	public void setOriginEventId(long eventId) {
+		this.originEventId = eventId;
+	}
+
+	@Override
+	public void setSourceWorkerId(long workerId) {
+		this.sourceWorkerId = workerId;
+	}
+
+	@Override
+	public long getSourceWorkerId() {
+		return sourceWorkerId;
+	}
+
+	@Override
+	public long getEventId() {
+		return eventId;
+	}
+
+	@Override
+	public List<Long> getSourceIds() {
+		return sourceIds;
+	}
+
+	@Override
+	public long getOriginEventId() {
+		return originEventId;
+	}
+
+	@Override
+	public void setEventId(long eventId) {
 		this.eventId = eventId;
-	}
-
-	@Override
-	public void setOriginWorkerId(long workerId) {
-		this.workerId = workerId;
-	}
-
-	@Override
-	public long getOriginWorkerId() {
-		return workerId;
 	}
 
 }

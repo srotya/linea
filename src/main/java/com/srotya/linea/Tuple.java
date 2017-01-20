@@ -15,10 +15,14 @@
  */
 package com.srotya.linea;
 
+import java.util.List;
+
 /**
  * @author ambud
  */
 public interface Tuple {
+	
+	public void setEventId(long eventId);
 	
 	public long getEventId();
 	
@@ -54,16 +58,14 @@ public interface Tuple {
 	
 	public void setComponentName(String componentName);
 	
-	public long[] getSourceIds();
-	
-	public void addSourceId(long id);
+	public List<Long> getSourceIds();
 	
 	public void setOriginEventId(long eventId);
 	
 	public long getOriginEventId();
 	
-	public void setOriginWorkerId(long workerId);
+	public void setSourceWorkerId(long workerId);
 	
-	public long getOriginWorkerId();
+	public long getSourceWorkerId();
 	
 }

@@ -45,13 +45,13 @@ public abstract class Spout<E extends Tuple> implements Bolt<E> {
 	 * Marking eventId as processed
 	 * @param eventId
 	 */
-	public abstract void ack(long eventId);
+	public abstract void ack(Long eventId);
 	
 	/**
 	 * Marking eventId as failed
 	 * @param eventId
 	 */
-	public abstract void fail(long eventId);
+	public abstract void fail(Long eventId);
 	
 	@Override
 	public ROUTING_TYPE getRoutingType() {

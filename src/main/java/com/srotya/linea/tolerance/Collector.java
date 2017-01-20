@@ -88,9 +88,9 @@ public class Collector<E extends Tuple> {
 	}
 
 	/**
-	 * Method to be used only by Spout when it generates a new {@link Tuple}. This
-	 * method will trigger creation of a new Event processing tree. (same as a
-	 * tuple tree Storm)
+	 * Method to be used only by Spout when it generates a new {@link Tuple}.
+	 * This method will trigger creation of a new Event processing tree. (same
+	 * as a tuple tree Storm)
 	 * 
 	 * @param nextProcessorId
 	 * @param event
@@ -99,7 +99,7 @@ public class Collector<E extends Tuple> {
 		event.setComponentName(lComponentId);
 		event.setTaskId(lTaskId);
 		event.setOriginEventId(event.getEventId());
-		event.setOriginWorkerId(workerId);
+		event.setSourceWorkerId(workerId);
 		emit(nextProcessorId, event, event);
 	}
 
@@ -121,16 +121,15 @@ public class Collector<E extends Tuple> {
 	/**
 	 * Emit event to next processor id. Event object is generated internally
 	 * from the supplied headers.
-	 * 
+	 *
 	 * @param nextProcessorId
 	 * @param outputEventHeaders
 	 * @param anchorEvent
 	 */
 	public void emit(String nextProcessorId, Map<String, Object> outputEventHeaders, E anchorEvent) {
 		E outputEvent = factory.buildEvent();
-		// outputEvent.getHeaders().putAll(outputEventHeaders);
 		outputEvent.setOriginEventId(anchorEvent.getOriginEventId());
-		outputEvent.addSourceId(anchorEvent.getOriginEventId());
+		outputEvent.getSourceIds().add(anchorEvent.getOriginEventId());
 		outputEvent.setTaskId(lTaskId);
 		outputEvent.setComponentName(lComponentId);
 		ack(anchorEvent.getComponentName(), anchorEvent.getOriginEventId(), outputEvent.getEventId(),
@@ -147,28 +146,13 @@ public class Collector<E extends Tuple> {
 	 */
 	protected void emit(String nextProcessorId, E outputEvent, E anchorEvent) {
 		outputEvent.setOriginEventId(anchorEvent.getOriginEventId());
-		outputEvent.addSourceId(anchorEvent.getOriginEventId());
+		outputEvent.getSourceIds().add(anchorEvent.getOriginEventId());
 		outputEvent.setTaskId(lTaskId);
 		outputEvent.setComponentName(lComponentId);
 		ack(anchorEvent.getComponentName(), anchorEvent.getOriginEventId(), outputEvent.getEventId(),
 				anchorEvent.getTaskId());
 		router.routeEvent(nextProcessorId, outputEvent);
 	}
-
-	// public void emit(String nextProcessorId, Event outputEvent, Event...
-	// anchorEvents) {
-	// outputEvent.getHeaders().put(Constants.FIELD_TASK_ID, taskId);
-	// for (Event anchorEvent : anchorEvents) {
-	// outputEvent.getSourceIds().add(anchorEvent.getEventId());
-	// outputEvent.setOriginEventId(anchorEvent.getOriginEventId());
-	// outputEvent.getHeaders().put(Constants.FIELD_SPOUT_NAME,
-	// (String) anchorEvent.getHeaders().get(Constants.FIELD_SPOUT_NAME));
-	// ack((String) anchorEvent.getHeaders().get(Constants.FIELD_SPOUT_NAME),
-	// anchorEvent.getOriginEventId(),
-	// anchorEvent.getEventId(), outputEvent.getEventId());
-	// }
-	// router.routeEvent(nextProcessorId, outputEvent);
-	// }
 
 	/**
 	 * @return factory
