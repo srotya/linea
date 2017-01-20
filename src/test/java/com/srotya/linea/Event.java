@@ -15,33 +15,32 @@
  */
 package com.srotya.linea;
 
-import java.io.Serializable;
 import java.net.SocketException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.uuid.EthernetAddress;
 import com.fasterxml.uuid.Generators;
+import com.srotya.linea.MurmurHash;
+import com.srotya.linea.Tuple;
+import com.srotya.linea.example.Constants;
 import com.srotya.linea.utils.NetUtils;
 
 /**
- * Event implementation.
- * 
  * @author ambud
  */
-public class Event implements Serializable {
+public class Event implements Tuple {
 
 	private static EthernetAddress RNG_ADDRESS;
 	public static final int AVG_EVENT_FIELD_COUNT = Integer.parseInt(System.getProperty("event.field.count", "40"));
-	private static final long serialVersionUID = 1L;
 	private int sourceWorkerId = -1;
-	private Long originEventId;
-	private List<Long> sourceIds;
-	private Long eventId;
+	private long originEventId;
+	private long[] sourceIds;
+	private int srcIdIndex;
+	private long eventId;
 	private Map<String, Object> headers;
+	private long workerId;
 
 	static {
 		try {
@@ -54,19 +53,19 @@ public class Event implements Serializable {
 
 	public Event(String eventId) {
 		this.eventId = MurmurHash.hash64(eventId);
-		sourceIds = new ArrayList<>();
+		sourceIds = new long[10];
 		headers = new HashMap<>(AVG_EVENT_FIELD_COUNT);
 	}
 
 	public Event() {
 		eventId = Generators.timeBasedGenerator(RNG_ADDRESS).generate().getMostSignificantBits();// UUID.randomUUID().getMostSignificantBits();
-		sourceIds = new ArrayList<>();
+		sourceIds = new long[10];
 		headers = new HashMap<>(AVG_EVENT_FIELD_COUNT);
 	}
 
 	Event(Map<String, Object> headers) {
 		eventId = Generators.timeBasedGenerator(RNG_ADDRESS).generate().getMostSignificantBits();// UUID.randomUUID().getMostSignificantBits();
-		sourceIds = new ArrayList<>();
+		sourceIds = new long[10];
 		this.headers = headers;
 	}
 
@@ -94,7 +93,7 @@ public class Event implements Serializable {
 	/**
 	 * @return
 	 */
-	public Long getEventId() {
+	public long getEventId() {
 		return eventId;
 	}
 
@@ -108,21 +107,21 @@ public class Event implements Serializable {
 	/**
 	 * @return
 	 */
-	public List<Long> getSourceIds() {
+	public long[] getSourceIds() {
 		return sourceIds;
 	}
 
 	/**
 	 * @param sourceIds
 	 */
-	public void setSourceIds(List<Long> sourceIds) {
+	public void setSourceIds(long[] sourceIds) {
 		this.sourceIds = sourceIds;
 	}
 
 	/**
 	 * @return the originEventId
 	 */
-	public Long getOriginEventId() {
+	public long getOriginEventId() {
 		return originEventId;
 	}
 
@@ -142,13 +141,16 @@ public class Event implements Serializable {
 	}
 
 	/**
-	 * @param sourceWorkerId the sourceWorkerId to set
+	 * @param sourceWorkerId
+	 *            the sourceWorkerId to set
 	 */
 	public void setSourceWorkerId(int sourceWorkerId) {
 		this.sourceWorkerId = sourceWorkerId;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -156,4 +158,106 @@ public class Event implements Serializable {
 		return "Event [originEventId=" + originEventId + ", sourceIds=" + sourceIds + ", eventId=" + eventId
 				+ ", headers=" + headers + "]";
 	}
+
+	@Override
+	public Object getGroupByKey() {
+		return headers.get(Constants.FIELD_GROUPBY_ROUTING_KEY);
+	}
+
+	@Override
+	public void setGroupByKey(Object key) {
+		headers.put(Constants.FIELD_GROUPBY_ROUTING_KEY, key);
+	}
+
+	@Override
+	public Object getGroupByValue() {
+		return headers.get(Constants.FIELD_GROUP_BY_VALUE);
+	}
+
+	@Override
+	public void setGroupByValue(Object value) {
+		headers.put(Constants.FIELD_GROUP_BY_VALUE, value);
+	}
+
+	@Override
+	public String getNextBoltId() {
+		return (String) headers.get(Constants.FIELD_NEXT_BOLT_ID);
+	}
+
+	@Override
+	public void setNextBoltId(String nextBoltId) {
+		headers.put(Constants.FIELD_NEXT_BOLT_ID, nextBoltId);
+	}
+
+	@Override
+	public int getDestinationTaskId() {
+		return (Integer) headers.get(Constants.FIELD_DESTINATION_TASK_ID);
+	}
+
+	@Override
+	public void setDestinationTaskId(int taskId) {
+		headers.put(Constants.FIELD_DESTINATION_TASK_ID, taskId);
+	}
+
+	@Override
+	public int getDestinationWorkerId() {
+		return (Integer) headers.get(Constants.FIELD_DESTINATION_WORKER_ID);
+	}
+
+	@Override
+	public void setDestinationWorkerId(int workerId) {
+		headers.put(Constants.FIELD_DESTINATION_WORKER_ID, workerId);
+	}
+
+	@Override
+	public int getTaskId() {
+		return (Integer) headers.get(Constants.FIELD_TASK_ID);
+	}
+
+	@Override
+	public void setTaskId(int taskId) {
+		headers.put(Constants.FIELD_TASK_ID, taskId);
+	}
+
+	@Override
+	public boolean isAck() {
+		return (Boolean) headers.get(Constants.FIELD_EVENT_TYPE);
+	}
+
+	@Override
+	public void setAck(boolean ack) {
+		headers.put(Constants.FIELD_EVENT_TYPE, ack);
+	}
+
+	@Override
+	public String getComponentName() {
+		return headers.get(Constants.FIELD_COMPONENT_NAME).toString();
+	}
+
+	@Override
+	public void setComponentName(String componentName) {
+		headers.put(Constants.FIELD_COMPONENT_NAME, componentName);
+	}
+
+	@Override
+	public void addSourceId(long id) {
+		sourceIds[srcIdIndex] = id;
+		srcIdIndex++;
+	}
+
+	@Override
+	public void setOriginEventId(long eventId) {
+		this.eventId = eventId;
+	}
+
+	@Override
+	public void setOriginWorkerId(long workerId) {
+		this.workerId = workerId;
+	}
+
+	@Override
+	public long getOriginWorkerId() {
+		return workerId;
+	}
+
 }

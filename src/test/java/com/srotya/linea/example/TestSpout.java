@@ -24,15 +24,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.srotya.linea.Event;
 import com.srotya.linea.processors.Spout;
 import com.srotya.linea.tolerance.Collector;
-import com.srotya.linea.utils.Constants;
 
 /**
  * @author ambud
  */
-public class TestSpout extends Spout {
+public class TestSpout extends Spout<Event> {
 
 	private static final long serialVersionUID = 1L;
-	private transient Collector collector;
+	private transient Collector<Event> collector;
 	private transient Set<Long> emittedEvents;
 	private transient int taskId;
 	private transient AtomicBoolean processed;
@@ -44,7 +43,7 @@ public class TestSpout extends Spout {
 	}
 
 	@Override
-	public void configure(Map<String, String> conf, int taskId, Collector collector) {
+	public void configure(Map<String, String> conf, int taskId, Collector<Event> collector) {
 		this.taskId = taskId;
 		this.processed = new AtomicBoolean(false);
 		this.collector = collector;
@@ -61,7 +60,10 @@ public class TestSpout extends Spout {
 		System.out.println("Running spout:" + taskId);
 		long timestamp = System.currentTimeMillis();
 		for (int i = 0; i < messageCount; i++) {
-			Event event = collector.getFactory().buildEvent(taskId + "_" + i);
+			if(Thread.currentThread().isInterrupted()) {
+				break;
+			}
+			Event event = (Event) collector.getFactory().buildEvent(taskId + "_" + i);
 			event.getHeaders().put("uuid", taskId + "host" + i);
 			event.getHeaders().put(Constants.FIELD_GROUPBY_ROUTING_KEY, "host"+i);
 			emittedEvents.add(event.getEventId());
@@ -98,14 +100,14 @@ public class TestSpout extends Spout {
 	}
 
 	@Override
-	public void ack(Long eventId) {
+	public void ack(long eventId) {
 		// boolean removed = false;
 		emittedEvents.remove(eventId);
 		c++;
 	}
 
 	@Override
-	public void fail(Long eventId) {
+	public void fail(long eventId) {
 		System.out.println("Spout failing event:" + eventId);
 	}
 

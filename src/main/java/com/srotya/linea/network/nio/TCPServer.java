@@ -26,21 +26,21 @@ import java.util.concurrent.Executors;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
-import com.srotya.linea.Event;
+import com.srotya.linea.Tuple;
 import com.srotya.linea.network.KryoObjectDecoder;
 import com.srotya.linea.network.Router;
-import com.srotya.linea.utils.Constants;
 
 /**
  * @author ambud
  */
-public class TCPServer {
+public class TCPServer<E extends Tuple> {
 
 	private ServerSocket server;
 	private ExecutorService es;
-	private Router router;
+	private Router<E> router;
 	private int dataPort;
 	private String bindAddress;
+	private Class<E> classOf;
 	public static final ThreadLocal<Kryo> kryoThreadLocal = new ThreadLocal<Kryo>() {
 		@Override
 		protected Kryo initialValue() {
@@ -48,37 +48,39 @@ public class TCPServer {
 			return kryo;
 		}
 	};
-	
-	public TCPServer(Router router, String bindAddress, int dataPort) {
+
+	public TCPServer(Class<E> classOf, Router<E> router, String bindAddress, int dataPort) {
+		this.classOf = classOf;
 		this.router = router;
 		this.bindAddress = bindAddress;
 		this.dataPort = dataPort;
 	}
-	
+
 	public void start() throws Exception {
 		es = Executors.newCachedThreadPool();
 		server = new ServerSocket(dataPort, 10, InetAddress.getByName(bindAddress));
-		
-		while(true) {
+
+		while (true) {
 			final Socket socket = server.accept();
 			socket.setReceiveBufferSize(1048576);
-			es.submit(()->{
-				try {
-					InputStream stream = new BufferedInputStream(socket.getInputStream(), 4096);
-					Input input = new Input(stream);
-					while(true) {
-						Event event = KryoObjectDecoder.streamToEvent(input);
-						router.directLocalRouteEvent(event.getHeaders().get(Constants.FIELD_NEXT_BOLT).toString(),
-								(Integer) event.getHeaders().get(Constants.FIELD_DESTINATION_TASK_ID), event);
+			es.submit(new Thread() {
+				public void run() {
+					try {
+						InputStream stream = new BufferedInputStream(socket.getInputStream(), 4096);
+						Input input = new Input(stream);
+						while (true) {
+							E event = KryoObjectDecoder.streamToEvent(classOf, input);
+							router.directLocalRouteEvent(event.getNextBoltId(), event.getDestinationTaskId(), event);
+						}
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
 				}
 			});
 		}
 	}
-	
+
 	public void stop() throws IOException {
 		server.close();
 	}

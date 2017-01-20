@@ -18,7 +18,10 @@ package com.srotya.linea.example;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.srotya.linea.Event;
 import com.srotya.linea.Topology;
+import com.srotya.linea.TupleFactory;
+import com.srotya.linea.disruptor.CopyTranslator;
 
 /**
  * Simple test topology to validate how Linea will launch and run pipelines and
@@ -36,7 +39,40 @@ public class SimpleTopology {
 		conf.put(Topology.WORKER_COUNT, args[1]);
 		conf.put(Topology.WORKER_DATA_PORT, args[2]);
 		conf.put(Topology.ACKER_PARALLELISM, "1");
-		Topology builder = new Topology(conf);
-		builder = builder.addSpout(new TestSpout(10000000), 1).addBolt(new PrinterBolt(), 1).start();
+		Topology<Event> builder = new Topology<Event>(conf, new EventFactory(), new EventTranslator(), Event.class);
+		builder = builder.addSpout(new TestSpout(1000000), 1).addBolt(new PrinterBolt(), 1).start();
+	}
+
+	public static class EventTranslator extends CopyTranslator<Event> {
+
+		@Override
+		public void translateTo(Event outputEvent, long sequence, Event inputEvent) {
+			outputEvent.getHeaders().clear();
+			outputEvent.setSourceIds(inputEvent.getSourceIds());
+			outputEvent.setEventId(inputEvent.getEventId());
+			outputEvent.setSourceWorkerId(inputEvent.getSourceWorkerId());
+			outputEvent.setOriginEventId(inputEvent.getOriginEventId());
+			outputEvent.getHeaders().putAll(inputEvent.getHeaders());
+		}
+
+	}
+
+	public static class EventFactory implements TupleFactory<Event> {
+
+		@Override
+		public Event newInstance() {
+			return new Event();
+		}
+
+		@Override
+		public Event buildEvent() {
+			return new Event();
+		}
+
+		@Override
+		public Event buildEvent(String eventId) {
+			return new Event(eventId);
+		}
+
 	}
 }

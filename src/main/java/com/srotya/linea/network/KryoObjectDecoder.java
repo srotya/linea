@@ -22,11 +22,10 @@ import java.util.List;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
-import com.srotya.linea.Event;
 import com.srotya.linea.network.nio.TCPServer;
 
 /**
- * Decodes {@link Kryo} Serialized {@link Event} objects. This Decoder
+ * Decodes {@link Kryo} Serialized {@link Tuple} objects. This Decoder
  * implementation has refactored utility methods that are used for both TCP and
  * UDP based transports.
  * 
@@ -43,11 +42,11 @@ public class KryoObjectDecoder {
 	 * @return
 	 * @throws IOException
 	 */
-	public static Event streamToEvent(InputStream stream) throws IOException {
+	public static <E> E streamToEvent(Class<E> classOf, InputStream stream) throws IOException {
 		Input input = new Input(stream);
 		try {
 			Kryo kryo = new Kryo();
-			Event event = kryo.readObject(input, Event.class);// InternalTCPTransportServer.kryoThreadLocal.get().readObject(input, Event.class);
+			E event = kryo.readObject(input, classOf);// InternalTCPTransportServer.kryoThreadLocal.get().readObject(input, Event.class);
 			return event;
 		} finally {
 		}
@@ -58,16 +57,16 @@ public class KryoObjectDecoder {
 	 * @return
 	 * @throws IOException
 	 */
-	public static Event streamToEvent(Input input) throws IOException {
+	public static <E> E streamToEvent(Class<E> classOf, Input input) throws IOException {
 		try {
-			Event event = TCPServer.kryoThreadLocal.get().readObject(input, Event.class);
+			E event = TCPServer.kryoThreadLocal.get().readObject(input, classOf);
 			return event;
 		} finally {
 		}
 	}
 
 	/**
-	 * Deserializes {@link List} of {@link Event}s from a byte array
+	 * Deserializes {@link List} of {@link Tuple}s from a byte array
 	 * 
 	 * @param bytes
 	 * @param skip
@@ -77,13 +76,13 @@ public class KryoObjectDecoder {
 	 * @return list of tauEvents
 	 * @throws IOException
 	 */
-	public static List<Event> bytesToEvent(byte[] bytes, int skip, int count) throws IOException {
-		List<Event> events = new ArrayList<>();
+	public static <E> List<E> bytesToEvent(Class<E> classOf, byte[] bytes, int skip, int count) throws IOException {
+		List<E> events = new ArrayList<>();
 		Input input = new Input(bytes);
 		input.skip(skip);
 		try {
 			for (int i = 0; i < count; i++) {
-				Event event = TCPServer.kryoThreadLocal.get().readObject(input, Event.class);
+				E event = TCPServer.kryoThreadLocal.get().readObject(input, classOf);
 				events.add(event);
 			}
 			return events;

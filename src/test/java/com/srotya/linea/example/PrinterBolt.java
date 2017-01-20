@@ -25,15 +25,15 @@ import com.srotya.linea.tolerance.Collector;
 /**
  * @author ambud
  */
-public class PrinterBolt implements Bolt {
+public class PrinterBolt implements Bolt<Event> {
 
 	private static final long serialVersionUID = 1L;
-	private transient Collector collector;
+	private transient Collector<Event> collector;
 	@SuppressWarnings("unused")
 	private transient int taskId;
 
 	@Override
-	public void configure(Map<String, String> conf, int taskId, Collector collector) {
+	public void configure(Map<String, String> conf, int taskId, Collector<Event> collector) {
 		this.taskId = taskId;
 		this.collector = collector;
 

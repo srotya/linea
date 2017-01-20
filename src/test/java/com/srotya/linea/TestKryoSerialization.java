@@ -21,10 +21,13 @@ import java.io.ByteArrayInputStream;
 
 import org.junit.Test;
 
-import com.srotya.linea.Event;
+import com.srotya.linea.Tuple;
 import com.srotya.linea.network.KryoObjectDecoder;
 import com.srotya.linea.network.KryoObjectEncoder;
 
+/**
+ * @author ambud
+ */
 public class TestKryoSerialization {
 
 	@Test
@@ -52,7 +55,7 @@ public class TestKryoSerialization {
 		byte[] ary = KryoObjectEncoder.eventToByteArray(e1);
 
 		ByteArrayInputStream stream = new ByteArrayInputStream(ary);
-		Event e2 = KryoObjectDecoder.streamToEvent(stream);
+		Tuple e2 = KryoObjectDecoder.streamToEvent(Event.class, stream);
 
 		assertEquals(e1.getEventId(), e2.getEventId());
 	}

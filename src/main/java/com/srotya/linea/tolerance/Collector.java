@@ -17,10 +17,9 @@ package com.srotya.linea.tolerance;
 
 import java.util.Map;
 
-import com.srotya.linea.Event;
-import com.srotya.linea.EventFactory;
+import com.srotya.linea.Tuple;
+import com.srotya.linea.TupleFactory;
 import com.srotya.linea.network.Router;
-import com.srotya.linea.utils.Constants;
 
 /**
  * A collector is responsible for gather events and acks that need to
@@ -35,13 +34,13 @@ import com.srotya.linea.utils.Constants;
  * 
  * @author ambud
  */
-public class Collector {
+public class Collector<E extends Tuple> {
 
 	public static final String FIELD_ACK_EVENT = "_ack";
 	private int lTaskId;
 	private String lComponentId;
-	private EventFactory factory;
-	private Router router;
+	private TupleFactory<E> factory;
+	private Router<E> router;
 	private int workerId;
 
 	/**
@@ -50,7 +49,7 @@ public class Collector {
 	 * @param lComponentId
 	 * @param taskId
 	 */
-	public Collector(EventFactory factory, Router router, String lComponentId, int taskId) {
+	public Collector(TupleFactory<E> factory, Router<E> router, String lComponentId, int taskId) {
 		this.factory = factory;
 		this.router = router;
 		this.lComponentId = lComponentId;
@@ -63,7 +62,7 @@ public class Collector {
 	 * 
 	 * @param event
 	 */
-	public void ack(Event event) {
+	public void ack(E event) {
 		for (Long sourceEventId : event.getSourceIds()) {
 			ack(lComponentId, sourceEventId, event.getEventId(), lTaskId);
 		}
@@ -77,35 +76,35 @@ public class Collector {
 	 * @param currentEventId
 	 * @param taskId
 	 */
-	protected void ack(String spoutName, Long sourceEventId, Long currentEventId, Integer taskId) {
-		Event event = factory.buildEvent();
+	protected void ack(String spoutName, long sourceEventId, long currentEventId, int taskId) {
+		E event = factory.buildEvent();
 		event.setOriginEventId(sourceEventId);
-		event.getHeaders().put(FIELD_ACK_EVENT, true); // for debug purposes
-		event.getHeaders().put(Constants.FIELD_GROUPBY_ROUTING_KEY, sourceEventId);
-		event.getHeaders().put(Constants.FIELD_AGGREGATION_VALUE, currentEventId);
-		event.getHeaders().put(Constants.FIELD_COMPONENT_NAME, spoutName);
-		event.getHeaders().put(Constants.FIELD_TASK_ID, taskId);
+		event.setAck(true); // for debug purposes
+		event.setGroupByKey(sourceEventId);
+		event.setGroupByValue(currentEventId);
+		event.setComponentName(spoutName);
+		event.setTaskId(taskId);
 		router.routeEvent(AckerBolt.ACKER_BOLT_NAME, event);
 	}
 
 	/**
-	 * Method to be used only by Spout when it generates a new {@link Event}.
-	 * This method will trigger creation of a new Event processing tree. (same
-	 * as a tuple tree Storm)
+	 * Method to be used only by Spout when it generates a new {@link Tuple}. This
+	 * method will trigger creation of a new Event processing tree. (same as a
+	 * tuple tree Storm)
 	 * 
 	 * @param nextProcessorId
 	 * @param event
 	 */
-	public void spoutEmit(String nextProcessorId, Event event) {
-		event.getHeaders().put(Constants.FIELD_COMPONENT_NAME, lComponentId);
-		event.getHeaders().put(Constants.FIELD_TASK_ID, lTaskId);
+	public void spoutEmit(String nextProcessorId, E event) {
+		event.setComponentName(lComponentId);
+		event.setTaskId(lTaskId);
 		event.setOriginEventId(event.getEventId());
-		event.setSourceWorkerId(workerId);
+		event.setOriginWorkerId(workerId);
 		emit(nextProcessorId, event, event);
 	}
 
 	/**
-	 * Emit {@link Event} directly to a task. This method circumvents the
+	 * Emit {@link Tuple} directly to a task. This method circumvents the
 	 * {@link Router}'s destination calculation logic. (To be used with extreme
 	 * care)
 	 * 
@@ -113,9 +112,9 @@ public class Collector {
 	 * @param destinationTaskId
 	 * @param event
 	 */
-	public void emitDirect(String nextProcessor, Integer destinationTaskId, Event event) {
-		event.getHeaders().put(Constants.FIELD_TASK_ID, lTaskId);
-		event.getHeaders().put(Constants.FIELD_COMPONENT_NAME, lComponentId);
+	public void emitDirect(String nextProcessor, int destinationTaskId, E event) {
+		event.setTaskId(lTaskId);
+		event.setComponentName(lComponentId);
 		router.routeToTaskId(nextProcessor, event, null, destinationTaskId);
 	}
 
@@ -127,32 +126,32 @@ public class Collector {
 	 * @param outputEventHeaders
 	 * @param anchorEvent
 	 */
-	public void emit(String nextProcessorId, Map<String, Object> outputEventHeaders, Event anchorEvent) {
-		Event outputEvent = factory.buildEvent();
-		outputEvent.getHeaders().putAll(outputEventHeaders);
+	public void emit(String nextProcessorId, Map<String, Object> outputEventHeaders, E anchorEvent) {
+		E outputEvent = factory.buildEvent();
+		// outputEvent.getHeaders().putAll(outputEventHeaders);
 		outputEvent.setOriginEventId(anchorEvent.getOriginEventId());
-		outputEvent.getSourceIds().add(anchorEvent.getOriginEventId());
-		outputEvent.getHeaders().put(Constants.FIELD_TASK_ID, lTaskId);
-		outputEvent.getHeaders().put(Constants.FIELD_COMPONENT_NAME, lComponentId);
-		ack((String) anchorEvent.getHeaders().get(Constants.FIELD_COMPONENT_NAME), anchorEvent.getOriginEventId(),
-				outputEvent.getEventId(), (Integer) anchorEvent.getHeaders().get(Constants.FIELD_TASK_ID));
+		outputEvent.addSourceId(anchorEvent.getOriginEventId());
+		outputEvent.setTaskId(lTaskId);
+		outputEvent.setComponentName(lComponentId);
+		ack(anchorEvent.getComponentName(), anchorEvent.getOriginEventId(), outputEvent.getEventId(),
+				anchorEvent.getTaskId());
 		router.routeEvent(nextProcessorId, outputEvent);
 	}
 
 	/**
-	 * Internally used for Spout {@link Event} emission.
+	 * Internally used for Spout {@link Tuple} emission.
 	 * 
 	 * @param nextProcessorId
 	 * @param outputEvent
 	 * @param anchorEvent
 	 */
-	protected void emit(String nextProcessorId, Event outputEvent, Event anchorEvent) {
+	protected void emit(String nextProcessorId, E outputEvent, E anchorEvent) {
 		outputEvent.setOriginEventId(anchorEvent.getOriginEventId());
-		outputEvent.getSourceIds().add(anchorEvent.getOriginEventId());
-		outputEvent.getHeaders().put(Constants.FIELD_TASK_ID, lTaskId);
-		outputEvent.getHeaders().put(Constants.FIELD_COMPONENT_NAME, lComponentId);
-		ack((String) anchorEvent.getHeaders().get(Constants.FIELD_COMPONENT_NAME), anchorEvent.getOriginEventId(),
-				outputEvent.getEventId(), (Integer) anchorEvent.getHeaders().get(Constants.FIELD_TASK_ID));
+		outputEvent.addSourceId(anchorEvent.getOriginEventId());
+		outputEvent.setTaskId(lTaskId);
+		outputEvent.setComponentName(lComponentId);
+		ack(anchorEvent.getComponentName(), anchorEvent.getOriginEventId(), outputEvent.getEventId(),
+				anchorEvent.getTaskId());
 		router.routeEvent(nextProcessorId, outputEvent);
 	}
 
@@ -174,7 +173,7 @@ public class Collector {
 	/**
 	 * @return factory
 	 */
-	public EventFactory getFactory() {
+	public TupleFactory<E> getFactory() {
 		return factory;
 	}
 

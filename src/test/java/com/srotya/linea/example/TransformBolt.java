@@ -25,13 +25,13 @@ import com.srotya.linea.tolerance.Collector;
 /**
  * @author ambud
  */
-public class TransformBolt implements Bolt {
+public class TransformBolt implements Bolt<Event> {
 
 	private static final long serialVersionUID = 1L;
-	private transient Collector collector;
+	private transient Collector<Event> collector;
 
 	@Override
-	public void configure(Map<String, String> conf, int instanceId, Collector collector) {
+	public void configure(Map<String, String> conf, int instanceId, Collector<Event> collector) {
 		this.collector = collector;
 	}
 

@@ -13,24 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.linea.processors;
-
+package com.srotya.linea;
 
 import com.lmax.disruptor.EventFactory;
-import com.srotya.linea.Event;
-import com.srotya.linea.UnifiedFactory;
 
 /**
- * Unified factory implementation for Tau
+ * Factory blueprint to build events
  * 
- * @author ambudsharma
+ * @author ambud_sharma
  */
-public class DisruptorUnifiedFactory extends UnifiedFactory implements EventFactory<Event> {
-
-	@Override
-	public Event newInstance() {
-		return buildEvent();
-	}
-
-
+public interface TupleFactory<E extends Tuple> extends EventFactory<E>{
+	
+	/**
+	 * Build Event object
+	 * @return event
+	 */
+	public E buildEvent();
+	
+	/**
+	 * Build and return event object with supplied eventId
+	 * @param eventId
+	 * @return
+	 */
+	public E buildEvent(String eventId);
+	
 }
