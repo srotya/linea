@@ -21,6 +21,8 @@ import java.net.InetAddress;
 import com.srotya.linea.utils.NetUtils;
 
 /**
+ * Entry for the {@link Columbus} worker map.
+ * 
  * @author ambud
  */
 public class WorkerEntry implements Serializable, Comparable<WorkerEntry> {

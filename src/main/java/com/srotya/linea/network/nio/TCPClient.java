@@ -31,6 +31,8 @@ import com.srotya.linea.clustering.WorkerEntry;
 import com.srotya.linea.network.KryoObjectEncoder;
 
 /**
+ * Inter Worker Communication (IWC) client, implemented as a Disruptor handler.
+ * 
  * @author ambud
  */
 public class TCPClient<E extends Tuple> implements EventHandler<E> {
@@ -100,7 +102,7 @@ public class TCPClient<E extends Tuple> implements EventHandler<E> {
 			}
 		} catch (IOException e) {
 			WorkerEntry entry = columbus.getWorkerMap().get(workerId);
-			logger.severe("Lost worker connection to WorkerId:"+workerId+"\tAddress:"+entry.getWorkerAddress());
+			logger.severe("Lost worker connection to WorkerId:" + workerId + "\tAddress:" + entry.getWorkerAddress());
 			retryConnectLoop(workerId, entry);
 			if (workerId % clientThreads == clientThreadId) {
 				OutputStream stream = socketMap.get(workerId);

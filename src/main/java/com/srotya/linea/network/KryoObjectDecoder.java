@@ -22,6 +22,7 @@ import java.util.List;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
+import com.srotya.linea.Tuple;
 import com.srotya.linea.network.nio.TCPServer;
 
 /**
@@ -38,6 +39,7 @@ public class KryoObjectDecoder {
 
 	/**
 	 * Deserialize {@link InputStream} to Event using Kryo
+	 * @param classOf
 	 * @param stream
 	 * @return
 	 * @throws IOException
@@ -53,6 +55,7 @@ public class KryoObjectDecoder {
 	}
 	
 	/**
+	 * @param classOf
 	 * @param input
 	 * @return
 	 * @throws IOException
@@ -68,12 +71,11 @@ public class KryoObjectDecoder {
 	/**
 	 * Deserializes {@link List} of {@link Tuple}s from a byte array
 	 * 
+	 * @param classOf
 	 * @param bytes
 	 * @param skip
-	 *            prefix bytes to skip
 	 * @param count
-	 *            of events to read
-	 * @return list of tauEvents
+	 * @return
 	 * @throws IOException
 	 */
 	public static <E> List<E> bytesToEvent(Class<E> classOf, byte[] bytes, int skip, int count) throws IOException {

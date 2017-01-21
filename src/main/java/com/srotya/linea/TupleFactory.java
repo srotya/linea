@@ -18,9 +18,9 @@ package com.srotya.linea;
 import com.lmax.disruptor.EventFactory;
 
 /**
- * Factory blueprint to build events
+ * Factory blueprint to build {@link Tuple}s
  * 
- * @author ambud_sharma
+ * @author ambud
  */
 public interface TupleFactory<E extends Tuple> extends EventFactory<E>{
 	

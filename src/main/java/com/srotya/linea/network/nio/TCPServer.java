@@ -31,6 +31,8 @@ import com.srotya.linea.network.KryoObjectDecoder;
 import com.srotya.linea.network.Router;
 
 /**
+ * Inter Worker Communication (IWC) server.
+ * 
  * @author ambud
  */
 public class TCPServer<E extends Tuple> {

@@ -21,6 +21,7 @@ import java.io.OutputStream;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
+import com.srotya.linea.Tuple;
 import com.srotya.linea.network.nio.TCPServer;
 
 /**
@@ -44,8 +45,8 @@ public class KryoObjectEncoder {
 
 	/**
 	 * Kryo serialize {@link Tuple} to byte array
-	 * @param event
-	 * @return event serialized as byte array
+	 * @param event serialized as byte array
+	 * @return
 	 * @throws IOException
 	 */
 	public static <E> byte[] eventToByteArray(E event) throws IOException {

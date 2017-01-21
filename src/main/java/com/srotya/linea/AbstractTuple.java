@@ -24,6 +24,9 @@ import com.fasterxml.uuid.Generators;
 import com.srotya.linea.utils.NetUtils;
 
 /**
+ * A semi-concrete definition of {@link Tuple} that can be extended into a
+ * concrete implementation.
+ * 
  * @author ambud
  */
 public abstract class AbstractTuple implements Tuple {

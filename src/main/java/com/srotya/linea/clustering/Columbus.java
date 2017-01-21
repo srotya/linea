@@ -62,7 +62,7 @@ public class Columbus implements Runnable {
 		this.workerMap = new ConcurrentHashMap<>();
 
 		this.selfWorkerId = Integer.parseInt(conf.getOrDefault(Topology.WORKER_ID, "-1"));
-		this.idCacheFile = new File(".idCache");
+		this.idCacheFile = new File("./target/.idCache");
 		// check cache, uses the same logic as
 		// https://issues.apache.org/jira/browse/KAFKA-1070
 		if (selfWorkerId < 0) {
