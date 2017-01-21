@@ -45,6 +45,8 @@ Thread.sleep(50000);
 System.exit(1);
 ```
 
+Checkout an example topology [here](https://github.com/srotya/linea/tree/generics/src/test/java/com/srotya/linea/example).
+
 ### Origins
 
 Linea was conceived out of a series of evolutions of Tau / Wraith engines for Event Correlation, since the problem domain poses some scaling and optimization challenges for guaranteed stream processing systems. These requirements demand for stream processing framework that is easy to tune, easy to deploy and doesn't have a lot of moving parts or overhead.
