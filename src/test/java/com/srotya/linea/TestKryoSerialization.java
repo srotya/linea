@@ -22,6 +22,7 @@ import java.io.ByteArrayInputStream;
 import org.junit.Test;
 
 import com.srotya.linea.Tuple;
+import com.srotya.linea.example.Event;
 import com.srotya.linea.network.KryoObjectDecoder;
 import com.srotya.linea.network.KryoObjectEncoder;
 

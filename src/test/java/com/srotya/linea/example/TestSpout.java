@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.srotya.linea.Event;
 import com.srotya.linea.processors.Spout;
 import com.srotya.linea.tolerance.Collector;
 

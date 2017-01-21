@@ -15,7 +15,6 @@
  */
 package com.srotya.linea.example;
 
-import com.srotya.linea.Event;
 import com.srotya.linea.TupleFactory;
 
 /**

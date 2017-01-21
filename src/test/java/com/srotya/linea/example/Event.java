@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.linea;
+package com.srotya.linea.example;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import com.srotya.linea.AbstractTuple;
 
 /**
  * @author ambud
