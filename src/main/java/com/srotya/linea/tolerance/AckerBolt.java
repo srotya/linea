@@ -127,7 +127,7 @@ public class AckerBolt<E extends Tuple> implements Bolt<E> {
 				// means event processing tree is complete
 				c++;
 				if (c % PRINT_COUNT == 0) {
-					logger.info("Acked " + PRINT_COUNT + ":" + taskId + "\t" + sourceId);
+					logger.fine("Acked " + PRINT_COUNT + ":" + taskId + "\t" + sourceId);
 				}
 				logger.fine("Acking event:" + sourceId + "\t" + trackerValue.getSourceSpout());
 

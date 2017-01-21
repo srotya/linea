@@ -23,7 +23,6 @@ import java.util.Map;
 
 import com.fasterxml.uuid.EthernetAddress;
 import com.fasterxml.uuid.Generators;
-import com.srotya.linea.example.Constants;
 import com.srotya.linea.utils.NetUtils;
 
 /**
@@ -38,6 +37,14 @@ public class Event implements Tuple {
 	private long eventId;
 	private Map<String, Object> headers;
 	private long sourceWorkerId = -1;
+	private Object groupByKey;
+	private String nextBoltId;
+	private int destinationTaskId;
+	private int taskId;
+	private String componentName;
+	private int destinationWorkerId;
+	private Object groupByValue;
+	private boolean ack;
 
 	static {
 		try {
@@ -49,10 +56,9 @@ public class Event implements Tuple {
 	}
 
 	public Event(String eventId) {
-		this();
-		// this.eventId = MurmurHash.hash64(eventId);
-		// sourceIds = new ArrayList<>();
-		// headers = new HashMap<>(AVG_EVENT_FIELD_COUNT);
+		this.eventId = MurmurHash.hash64(eventId);
+		sourceIds = new ArrayList<>();
+		headers = new HashMap<>(AVG_EVENT_FIELD_COUNT);
 	}
 
 	public Event() {
@@ -88,82 +94,82 @@ public class Event implements Tuple {
 
 	@Override
 	public Object getGroupByKey() {
-		return headers.get(Constants.FIELD_GROUPBY_ROUTING_KEY);
+		return groupByKey;
 	}
 
 	@Override
 	public void setGroupByKey(Object key) {
-		headers.put(Constants.FIELD_GROUPBY_ROUTING_KEY, key);
+		groupByKey = key;
 	}
 
 	@Override
 	public Object getGroupByValue() {
-		return headers.get(Constants.FIELD_GROUP_BY_VALUE);
+		return groupByValue;
 	}
 
 	@Override
 	public void setGroupByValue(Object value) {
-		headers.put(Constants.FIELD_GROUP_BY_VALUE, value);
+		groupByValue = value;
 	}
 
 	@Override
 	public String getNextBoltId() {
-		return (String) headers.get(Constants.FIELD_NEXT_BOLT_ID);
+		return nextBoltId;
 	}
 
 	@Override
 	public void setNextBoltId(String nextBoltId) {
-		headers.put(Constants.FIELD_NEXT_BOLT_ID, nextBoltId);
+		this.nextBoltId = nextBoltId;
 	}
 
 	@Override
 	public int getDestinationTaskId() {
-		return (Integer) headers.get(Constants.FIELD_DESTINATION_TASK_ID);
+		return destinationTaskId;
 	}
 
 	@Override
 	public void setDestinationTaskId(int taskId) {
-		headers.put(Constants.FIELD_DESTINATION_TASK_ID, taskId);
+		destinationTaskId = taskId;
 	}
 
 	@Override
 	public int getDestinationWorkerId() {
-		return (Integer) headers.get(Constants.FIELD_DESTINATION_WORKER_ID);
+		return destinationWorkerId;
 	}
 
 	@Override
 	public void setDestinationWorkerId(int workerId) {
-		headers.put(Constants.FIELD_DESTINATION_WORKER_ID, workerId);
+		destinationWorkerId = workerId;
 	}
 
 	@Override
 	public int getTaskId() {
-		return (Integer) headers.get(Constants.FIELD_TASK_ID);
+		return taskId;
 	}
 
 	@Override
 	public void setTaskId(int taskId) {
-		headers.put(Constants.FIELD_TASK_ID, taskId);
+		this.taskId = taskId;
 	}
 
 	@Override
 	public boolean isAck() {
-		return (Boolean) headers.get(Constants.FIELD_EVENT_TYPE);
+		return ack;
 	}
 
 	@Override
 	public void setAck(boolean ack) {
-		headers.put(Constants.FIELD_EVENT_TYPE, ack);
+		this.ack = ack;
 	}
 
 	@Override
 	public String getComponentName() {
-		return headers.get(Constants.FIELD_COMPONENT_NAME).toString();
+		return componentName;
 	}
 
 	@Override
 	public void setComponentName(String componentName) {
-		headers.put(Constants.FIELD_COMPONENT_NAME, componentName);
+		this.componentName = componentName;
 	}
 
 	@Override

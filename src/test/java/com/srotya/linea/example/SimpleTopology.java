@@ -38,9 +38,9 @@ public class SimpleTopology {
 		conf.put(Topology.WORKER_ID, args[0]);
 		conf.put(Topology.WORKER_COUNT, args[1]);
 		conf.put(Topology.WORKER_DATA_PORT, args[2]);
-		conf.put(Topology.ACKER_PARALLELISM, "1");
+		conf.put(Topology.ACKER_PARALLELISM, "2");
 		Topology<Event> builder = new Topology<Event>(conf, new EventFactory(), new EventTranslator(), Event.class);
-		builder = builder.addSpout(new TestSpout(1000000), 1).addBolt(new PrinterBolt(), 1).start();
+		builder = builder.addSpout(new TestSpout(10_000_000), 2).addBolt(new PrinterBolt(), 2).start();
 	}
 
 	public static class EventTranslator extends CopyTranslator<Event> {
@@ -48,12 +48,20 @@ public class SimpleTopology {
 		@Override
 		public void translateTo(Event outputEvent, long sequence, Event inputEvent) {
 			outputEvent.getHeaders().clear();
+			outputEvent.getHeaders().putAll(inputEvent.getHeaders());
 			outputEvent.getSourceIds().clear();
 			outputEvent.getSourceIds().addAll(inputEvent.getSourceIds());
 			outputEvent.setEventId(inputEvent.getEventId());
 			outputEvent.setSourceWorkerId(inputEvent.getSourceWorkerId());
 			outputEvent.setOriginEventId(inputEvent.getOriginEventId());
-			outputEvent.getHeaders().putAll(inputEvent.getHeaders());
+			outputEvent.setGroupByKey(inputEvent.getGroupByKey());
+			outputEvent.setGroupByValue(inputEvent.getGroupByValue());
+			outputEvent.setNextBoltId(inputEvent.getNextBoltId());
+			outputEvent.setDestinationTaskId(inputEvent.getDestinationTaskId());
+			outputEvent.setTaskId(inputEvent.getTaskId());
+			outputEvent.setDestinationWorkerId(inputEvent.getDestinationWorkerId());
+			outputEvent.setComponentName(inputEvent.getComponentName());
+			outputEvent.setAck(inputEvent.isAck());
 		}
 
 	}

@@ -228,4 +228,46 @@ public class Topology<E extends Tuple> {
 		return router;
 	}
 
+	/**
+	 * @return the executorMap
+	 */
+	public Map<String, BoltExecutor<E>> getExecutorMap() {
+		return executorMap;
+	}
+
+	/**
+	 * @return the translator
+	 */
+	public CopyTranslator<E> getTranslator() {
+		return translator;
+	}
+
+	/**
+	 * @return the columbus
+	 */
+	public Columbus getColumbus() {
+		return columbus;
+	}
+
+	/**
+	 * @return the workerCount
+	 */
+	public int getWorkerCount() {
+		return workerCount;
+	}
+
+	/**
+	 * @return the ackerCount
+	 */
+	public int getAckerCount() {
+		return ackerCount;
+	}
+
+	/**
+	 * @return the classOf
+	 */
+	public Class<E> getClassOf() {
+		return classOf;
+	}
+
 }

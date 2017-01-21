@@ -65,7 +65,6 @@ public class TestSpout extends Spout<Event> {
 			}
 			Event event = (Event) collector.getFactory().buildEvent(taskId + "_" + i);
 			event.setGroupByKey("host"+i);
-			event.getHeaders().put("uuid", taskId + "host" + i);
 			emittedEvents.add(event.getEventId());
 			collector.spoutEmit("printerBolt", event);
 			if (i % 100000 == 0) {
