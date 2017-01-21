@@ -20,14 +20,10 @@ import java.util.Map;
 
 import com.srotya.linea.Event;
 import com.srotya.linea.Topology;
-import com.srotya.linea.TupleFactory;
-import com.srotya.linea.disruptor.CopyTranslator;
 
 /**
  * Simple test topology to validate how Linea will launch and run pipelines and
  * acking.
- * 
- * Fixed bugs with copy translator causing issues in acking.
  * 
  * @author ambud
  */
@@ -40,48 +36,7 @@ public class SimpleTopology {
 		conf.put(Topology.WORKER_DATA_PORT, args[2]);
 		conf.put(Topology.ACKER_PARALLELISM, "2");
 		Topology<Event> builder = new Topology<Event>(conf, new EventFactory(), new EventTranslator(), Event.class);
-		builder = builder.addSpout(new TestSpout(10_000_000), 2).addBolt(new PrinterBolt(), 2).start();
-	}
-
-	public static class EventTranslator extends CopyTranslator<Event> {
-
-		@Override
-		public void translateTo(Event outputEvent, long sequence, Event inputEvent) {
-			outputEvent.getHeaders().clear();
-			outputEvent.getHeaders().putAll(inputEvent.getHeaders());
-			outputEvent.getSourceIds().clear();
-			outputEvent.getSourceIds().addAll(inputEvent.getSourceIds());
-			outputEvent.setEventId(inputEvent.getEventId());
-			outputEvent.setSourceWorkerId(inputEvent.getSourceWorkerId());
-			outputEvent.setOriginEventId(inputEvent.getOriginEventId());
-			outputEvent.setGroupByKey(inputEvent.getGroupByKey());
-			outputEvent.setGroupByValue(inputEvent.getGroupByValue());
-			outputEvent.setNextBoltId(inputEvent.getNextBoltId());
-			outputEvent.setDestinationTaskId(inputEvent.getDestinationTaskId());
-			outputEvent.setTaskId(inputEvent.getTaskId());
-			outputEvent.setDestinationWorkerId(inputEvent.getDestinationWorkerId());
-			outputEvent.setComponentName(inputEvent.getComponentName());
-			outputEvent.setAck(inputEvent.isAck());
-		}
-
-	}
-
-	public static class EventFactory implements TupleFactory<Event> {
-
-		@Override
-		public Event newInstance() {
-			return new Event();
-		}
-
-		@Override
-		public Event buildEvent() {
-			return new Event();
-		}
-
-		@Override
-		public Event buildEvent(String eventId) {
-			return new Event(eventId);
-		}
-
+		builder = builder.addSpout(new TestSpout(10_000_000), 2).addBolt(new TransformBolt(), 2)
+				.addBolt(new PrinterBolt(), 2).start();
 	}
 }

@@ -17,12 +17,33 @@ package com.srotya.linea.disruptor;
 
 import com.lmax.disruptor.EventTranslatorOneArg;
 import com.lmax.disruptor.RingBuffer;
+import com.srotya.linea.Tuple;
 
 /**
  * Translator used by Disruptor to copy events into a {@link RingBuffer}
  * 
  * @author ambud
  */
-public abstract class CopyTranslator<E> implements EventTranslatorOneArg<E, E> {
+public abstract class CopyTranslator<E extends Tuple> implements EventTranslatorOneArg<E, E> {
+	
+	@Override
+	public void translateTo(E outputEvent, long sequence, E inputEvent) {
+		outputEvent.getSourceIds().clear();
+		outputEvent.getSourceIds().addAll(inputEvent.getSourceIds());
+		outputEvent.setEventId(inputEvent.getEventId());
+		outputEvent.setSourceWorkerId(inputEvent.getSourceWorkerId());
+		outputEvent.setOriginEventId(inputEvent.getOriginEventId());
+		outputEvent.setGroupByKey(inputEvent.getGroupByKey());
+		outputEvent.setGroupByValue(inputEvent.getGroupByValue());
+		outputEvent.setNextBoltId(inputEvent.getNextBoltId());
+		outputEvent.setDestinationTaskId(inputEvent.getDestinationTaskId());
+		outputEvent.setTaskId(inputEvent.getTaskId());
+		outputEvent.setDestinationWorkerId(inputEvent.getDestinationWorkerId());
+		outputEvent.setComponentName(inputEvent.getComponentName());
+		outputEvent.setAck(inputEvent.isAck());
+		translate(outputEvent, sequence, inputEvent);
+	}
+
+	public abstract void translate(E outputEvent, long sequence, E inputEvent);
 
 }

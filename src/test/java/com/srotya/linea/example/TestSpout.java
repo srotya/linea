@@ -15,6 +15,7 @@
  */
 package com.srotya.linea.example;
 
+import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -60,11 +61,11 @@ public class TestSpout extends Spout<Event> {
 		System.out.println("Running spout:" + taskId);
 		long timestamp = System.currentTimeMillis();
 		for (int i = 0; i < messageCount; i++) {
-			if(Thread.currentThread().isInterrupted()) {
+			if (Thread.currentThread().isInterrupted()) {
 				break;
 			}
 			Event event = (Event) collector.getFactory().buildEvent(taskId + "_" + i);
-			event.setGroupByKey("host"+i);
+			event.setGroupByKey("host" + i);
 			emittedEvents.add(event.getEventId());
 			collector.spoutEmit("printerBolt", event);
 			if (i % 100000 == 0) {
@@ -73,13 +74,15 @@ public class TestSpout extends Spout<Event> {
 		}
 		processed.set(true);
 		timestamp = System.currentTimeMillis() - timestamp;
-		System.out.println("Emitted all events in:" + timestamp + "ms");
+		System.out.println("Emitted all events in:" + timestamp / 1000 + " seconds");
 		timestamp = System.currentTimeMillis();
 		while (true) {
 			if (emittedEvents.size() == 0) {
-				System.out.println("Completed processing " + messageCount + " events" + "\ttaskid:" + taskId);
+				NumberFormat formatter = NumberFormat.getInstance();
+				System.out.println(
+						"Completed processing " + formatter.format(messageCount) + " events" + "\ttaskid:" + taskId);
 				timestamp = System.currentTimeMillis() - timestamp;
-				System.out.println("Add additional:" + timestamp + "ms for buffer to be processed");
+				System.out.println("Add additional:" + timestamp / 1000 + " seconds for buffer to be processed");
 				try {
 					Thread.sleep(5000);
 				} catch (InterruptedException e) {
