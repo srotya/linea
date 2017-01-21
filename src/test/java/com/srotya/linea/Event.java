@@ -15,55 +15,23 @@
  */
 package com.srotya.linea;
 
-import java.net.SocketException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import com.fasterxml.uuid.EthernetAddress;
-import com.fasterxml.uuid.Generators;
-import com.srotya.linea.utils.NetUtils;
 
 /**
  * @author ambud
  */
-public class Event implements Tuple {
+public class Event extends AbstractTuple {
 
-	private static EthernetAddress RNG_ADDRESS;
 	public static final int AVG_EVENT_FIELD_COUNT = Integer.parseInt(System.getProperty("event.field.count", "40"));
-	private long originEventId;
-	private List<Long> sourceIds;
-	private long eventId;
 	private Map<String, Object> headers;
-	private long sourceWorkerId = -1;
-	private Object groupByKey;
-	private String nextBoltId;
-	private int destinationTaskId;
-	private int taskId;
-	private String componentName;
-	private int destinationWorkerId;
-	private Object groupByValue;
-	private boolean ack;
-
-	static {
-		try {
-			RNG_ADDRESS = EthernetAddress.valueOf(NetUtils.selectDefaultIPAddress(false).getHardwareAddress());
-		} catch (NumberFormatException | SocketException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
 
 	public Event(String eventId) {
-		this.eventId = MurmurHash.hash64(eventId);
-		sourceIds = new ArrayList<>();
+		super(eventId);
 		headers = new HashMap<>(AVG_EVENT_FIELD_COUNT);
 	}
 
 	public Event() {
-		eventId = Generators.timeBasedGenerator(RNG_ADDRESS).generate().getMostSignificantBits();// UUID.randomUUID().getMostSignificantBits();
-		sourceIds = new ArrayList<>();
 		headers = new HashMap<>(AVG_EVENT_FIELD_COUNT);
 	}
 
@@ -79,132 +47,6 @@ public class Event implements Tuple {
 	 */
 	public void setHeaders(Map<String, Object> headers) {
 		this.headers = headers;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		return "Event [originEventId=" + originEventId + ", sourceIds=" + sourceIds + ", eventId=" + eventId
-				+ ", headers=" + headers + "]";
-	}
-
-	@Override
-	public Object getGroupByKey() {
-		return groupByKey;
-	}
-
-	@Override
-	public void setGroupByKey(Object key) {
-		groupByKey = key;
-	}
-
-	@Override
-	public Object getGroupByValue() {
-		return groupByValue;
-	}
-
-	@Override
-	public void setGroupByValue(Object value) {
-		groupByValue = value;
-	}
-
-	@Override
-	public String getNextBoltId() {
-		return nextBoltId;
-	}
-
-	@Override
-	public void setNextBoltId(String nextBoltId) {
-		this.nextBoltId = nextBoltId;
-	}
-
-	@Override
-	public int getDestinationTaskId() {
-		return destinationTaskId;
-	}
-
-	@Override
-	public void setDestinationTaskId(int taskId) {
-		destinationTaskId = taskId;
-	}
-
-	@Override
-	public int getDestinationWorkerId() {
-		return destinationWorkerId;
-	}
-
-	@Override
-	public void setDestinationWorkerId(int workerId) {
-		destinationWorkerId = workerId;
-	}
-
-	@Override
-	public int getTaskId() {
-		return taskId;
-	}
-
-	@Override
-	public void setTaskId(int taskId) {
-		this.taskId = taskId;
-	}
-
-	@Override
-	public boolean isAck() {
-		return ack;
-	}
-
-	@Override
-	public void setAck(boolean ack) {
-		this.ack = ack;
-	}
-
-	@Override
-	public String getComponentName() {
-		return componentName;
-	}
-
-	@Override
-	public void setComponentName(String componentName) {
-		this.componentName = componentName;
-	}
-
-	@Override
-	public void setOriginEventId(long eventId) {
-		this.originEventId = eventId;
-	}
-
-	@Override
-	public void setSourceWorkerId(long workerId) {
-		this.sourceWorkerId = workerId;
-	}
-
-	@Override
-	public long getSourceWorkerId() {
-		return sourceWorkerId;
-	}
-
-	@Override
-	public long getEventId() {
-		return eventId;
-	}
-
-	@Override
-	public List<Long> getSourceIds() {
-		return sourceIds;
-	}
-
-	@Override
-	public long getOriginEventId() {
-		return originEventId;
-	}
-
-	@Override
-	public void setEventId(long eventId) {
-		this.eventId = eventId;
 	}
 
 }
