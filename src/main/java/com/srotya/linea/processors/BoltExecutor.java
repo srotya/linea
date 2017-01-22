@@ -81,7 +81,11 @@ public class BoltExecutor<E extends Tuple> {
 		this.taskProcessorMap = new HashMap<>();
 
 		this.templateBoltInstance = deserializeBoltInstance(serializedBoltInstance);
-		this.es = Executors.newFixedThreadPool(parallelism * 2);
+		if(templateBoltInstance instanceof Spout) {
+			this.es = Executors.newFixedThreadPool(parallelism * 2);
+		}else {
+			this.es = Executors.newFixedThreadPool(parallelism);
+		}
 		this.copyTranslator = copyTranslator;
 	}
 
