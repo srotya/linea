@@ -33,9 +33,10 @@ public class SimpleTopology {
 		conf.put(Topology.WORKER_ID, args[0]);
 		conf.put(Topology.WORKER_COUNT, args[1]);
 		conf.put(Topology.WORKER_DATA_PORT, args[2]);
-		conf.put(Topology.ACKER_PARALLELISM, "1");
+		int parallelism = 1;
+		conf.put(Topology.ACKER_PARALLELISM, String.valueOf(parallelism * 2));
 		Topology<Event> builder = new Topology<Event>(conf, new EventFactory(), new EventTranslator(), Event.class);
-		builder = builder.addSpout(new TestSpout(10_000_000), 1).addBolt(new TransformBolt(), 1)
-				.addBolt(new PrinterBolt(), 1).start();
+		builder = builder.addSpout(new TestSpout(3 * 10_000_000), parallelism * 2)
+				.addBolt(new TransformBolt(), parallelism).addBolt(new PrinterBolt(), parallelism).start();
 	}
 }

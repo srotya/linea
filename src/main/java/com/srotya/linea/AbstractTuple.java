@@ -15,13 +15,9 @@
  */
 package com.srotya.linea;
 
-import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.fasterxml.uuid.EthernetAddress;
-import com.fasterxml.uuid.Generators;
-import com.srotya.linea.utils.NetUtils;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * A semi-concrete definition of {@link Tuple} that can be extended into a
@@ -31,7 +27,6 @@ import com.srotya.linea.utils.NetUtils;
  */
 public abstract class AbstractTuple implements Tuple {
 
-	private static EthernetAddress RNG_ADDRESS;
 	public static final int AVG_EVENT_FIELD_COUNT = Integer.parseInt(System.getProperty("event.field.count", "40"));
 	private long originEventId;
 	private List<Long> sourceIds;
@@ -45,23 +40,14 @@ public abstract class AbstractTuple implements Tuple {
 	private int destinationWorkerId;
 	private Object groupByValue;
 	private boolean ack;
-
-	static {
-		try {
-			RNG_ADDRESS = EthernetAddress.valueOf(NetUtils.selectDefaultIPAddress(false).getHardwareAddress());
-		} catch (NumberFormatException | SocketException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
+	
 	public AbstractTuple(String eventId) {
 		this.eventId = MurmurHash.hash64(eventId);
 		sourceIds = new ArrayList<>();
 	}
 
 	public AbstractTuple() {
-		eventId = Generators.timeBasedGenerator(RNG_ADDRESS).generate().getMostSignificantBits();// UUID.randomUUID().getMostSignificantBits();
+		eventId = ThreadLocalRandom.current().nextLong();
 		sourceIds = new ArrayList<>();
 	}
 
