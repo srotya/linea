@@ -29,17 +29,17 @@ import com.srotya.linea.tolerance.Collector;
 /**
  * @author ambud
  */
-public class TestSpout extends Spout<BatchEvent> {
+public class TestBatchSpout extends Spout<BatchEvent> {
 
 	private static final long serialVersionUID = 1L;
 	private transient Collector<BatchEvent> collector;
 	private transient Set<Long> emittedEvents;
 	private transient int taskId;
 	private transient AtomicBoolean processed;
-	private int c;
-	private int messageCount;
+	private long c;
+	private long messageCount;
 
-	public TestSpout(int messageCount) {
+	public TestBatchSpout(long messageCount) {
 		this.messageCount = messageCount;
 	}
 
@@ -61,7 +61,7 @@ public class TestSpout extends Spout<BatchEvent> {
 		System.out.println("Running spout:" + taskId);
 		long timestamp = System.currentTimeMillis();
 		BatchEvent event = collector.getFactory().buildEvent(taskId + "_" + 0);
-		for (int i = 0; i < messageCount; i++) {
+		for (long i = 0; i < messageCount; i++) {
 			if (Thread.currentThread().isInterrupted()) {
 				break;
 			}
@@ -74,7 +74,7 @@ public class TestSpout extends Spout<BatchEvent> {
 				collector.spoutEmit("printerBolt", event);
 				event = collector.getFactory().buildEvent(taskId + "_" + i);
 			}
-			if (i % 100000 == 0) {
+			if (i % 1000000 == 0) {
 				System.err.println("Produced " + i + " events:" + taskId);
 			}
 		}

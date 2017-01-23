@@ -35,8 +35,9 @@ public class BatchTopology {
 		conf.put(Topology.WORKER_DATA_PORT, args[2]);
 		int parallelism = 1;
 		conf.put(Topology.ACKER_PARALLELISM, String.valueOf(parallelism * 2));
-		Topology<BatchEvent> builder = new Topology<BatchEvent>(conf, new EventFactory(), new EventTranslator(), BatchEvent.class);
-		builder = builder.addSpout(new TestSpout(3 * 10_000_000), parallelism * 2)
+		Topology<BatchEvent> builder = new Topology<BatchEvent>(conf, new EventFactory(), new EventTranslator(),
+				BatchEvent.class);
+		builder = builder.addSpout(new TestBatchSpout(1_000_000_000L), parallelism * 2)
 				.addBolt(new TransformBolt(), parallelism).addBolt(new PrinterBolt(), parallelism).start();
 	}
 }
