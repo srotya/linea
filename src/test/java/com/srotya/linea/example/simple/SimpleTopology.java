@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.linea.example;
+package com.srotya.linea.example.simple;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +36,7 @@ public class SimpleTopology {
 		int parallelism = 1;
 		conf.put(Topology.ACKER_PARALLELISM, String.valueOf(parallelism * 2));
 		Topology<Event> builder = new Topology<Event>(conf, new EventFactory(), new EventTranslator(), Event.class);
-		builder = builder.addSpout(new TestSpout(3 * 10_000_000), parallelism * 2)
+		builder = builder.addSpout(new TestSpout(1 * 10_000_000), parallelism * 2)
 				.addBolt(new TransformBolt(), parallelism).addBolt(new PrinterBolt(), parallelism).start();
 	}
 }

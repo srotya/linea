@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.linea.example;
+package com.srotya.linea.example.batch;
 
 import java.util.Map;
 
@@ -24,13 +24,13 @@ import com.srotya.linea.tolerance.Collector;
 /**
  * @author ambud
  */
-public class TransformBolt implements Bolt<Event> {
+public class TransformBolt implements Bolt<BatchEvent> {
 
 	private static final long serialVersionUID = 1L;
-	private transient Collector<Event> collector;
+	private transient Collector<BatchEvent> collector;
 
 	@Override
-	public void configure(Map<String, String> conf, int instanceId, Collector<Event> collector) {
+	public void configure(Map<String, String> conf, int instanceId, Collector<BatchEvent> collector) {
 		this.collector = collector;
 	}
 
@@ -39,10 +39,13 @@ public class TransformBolt implements Bolt<Event> {
 	}
 
 	@Override
-	public void process(Event event) {
-		Map<String, Object> headers = event.getHeaders();
-		headers.put("fieldtransform", 2231);
-		collector.emit("printerBolt", headers, event);
+	public void process(BatchEvent event) {
+		BatchEvent buildEvent = collector.getFactory().buildEvent();
+		for (Map<String, Object> entry : event.getBatch()) {
+			buildEvent.getBatch().add(entry);
+			entry.put("fieldtransform", 2231);
+		}
+		collector.emit("printerBolt", buildEvent, event);
 		collector.ack(event);
 	}
 

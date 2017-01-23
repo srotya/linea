@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.linea.example;
+package com.srotya.linea.example.batch;
 
 import com.srotya.linea.disruptor.CopyTranslator;
 
 /**
  * @author ambud
  */
-public class EventTranslator extends CopyTranslator<Event> {
+public class EventTranslator extends CopyTranslator<BatchEvent> {
 
 	@Override
-	public void translate(Event outputEvent, long sequence, Event inputEvent) {
-		outputEvent.getHeaders().clear();
-		outputEvent.getHeaders().putAll(inputEvent.getHeaders());
+	public void translate(BatchEvent outputEvent, long sequence, BatchEvent inputEvent) {
+		outputEvent.getBatch().clear();
+		outputEvent.getBatch().addAll(inputEvent.getBatch());
 	}
 
 }

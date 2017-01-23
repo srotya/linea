@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.linea.example;
+package com.srotya.linea.example.batch;
 
 import java.util.Map;
 
@@ -24,23 +24,25 @@ import com.srotya.linea.tolerance.Collector;
 /**
  * @author ambud
  */
-public class PrinterBolt implements Bolt<Event> {
+public class PrinterBolt implements Bolt<BatchEvent> {
 
 	private static final long serialVersionUID = 1L;
-	private transient Collector<Event> collector;
+	private transient Collector<BatchEvent> collector;
 	@SuppressWarnings("unused")
 	private transient int taskId;
 
 	@Override
-	public void configure(Map<String, String> conf, int taskId, Collector<Event> collector) {
+	public void configure(Map<String, String> conf, int taskId, Collector<BatchEvent> collector) {
 		this.taskId = taskId;
 		this.collector = collector;
 
 	}
 
 	@Override
-	public void process(Event event) {
-//		System.out.println("Print event:" + event);
+	public void process(BatchEvent event) {
+		if(event.getBatch().size()!=100) {
+			System.out.println("Print event:" + event);
+		}
 		collector.ack(event);
 	}
 

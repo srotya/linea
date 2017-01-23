@@ -15,8 +15,6 @@
  */
 package com.srotya.linea.tolerance;
 
-import java.util.Map;
-
 import com.srotya.linea.Tuple;
 import com.srotya.linea.TupleFactory;
 import com.srotya.linea.network.Router;
@@ -119,32 +117,13 @@ public class Collector<E extends Tuple> {
 	}
 
 	/**
-	 * Emit event to next processor id. Event object is generated internally
-	 * from the supplied headers.
-	 *
-	 * @param nextProcessorId
-	 * @param outputEventHeaders
-	 * @param anchorEvent
-	 */
-	public void emit(String nextProcessorId, Map<String, Object> outputEventHeaders, E anchorEvent) {
-		E outputEvent = factory.buildEvent();
-		outputEvent.setOriginEventId(anchorEvent.getOriginEventId());
-		outputEvent.getSourceIds().add(anchorEvent.getOriginEventId());
-		outputEvent.setTaskId(lTaskId);
-		outputEvent.setComponentName(lComponentId);
-		ack(anchorEvent.getComponentName(), anchorEvent.getOriginEventId(), outputEvent.getEventId(),
-				anchorEvent.getTaskId());
-		router.routeEvent(nextProcessorId, outputEvent);
-	}
-
-	/**
 	 * Internally used for Spout {@link Tuple} emission.
 	 * 
 	 * @param nextProcessorId
 	 * @param outputEvent
 	 * @param anchorEvent
 	 */
-	protected void emit(String nextProcessorId, E outputEvent, E anchorEvent) {
+	public void emit(String nextProcessorId, E outputEvent, E anchorEvent) {
 		outputEvent.setOriginEventId(anchorEvent.getOriginEventId());
 		outputEvent.getSourceIds().add(anchorEvent.getOriginEventId());
 		outputEvent.setTaskId(lTaskId);
