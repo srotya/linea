@@ -15,6 +15,7 @@
  */
 package com.srotya.linea.clustering;
 
+import java.net.InetAddress;
 import java.util.Map;
 
 /**
@@ -32,9 +33,10 @@ public interface ClusterKeeper {
 	 * Initialize the Keeper (connect to data store)
 	 * 
 	 * @param conf
+	 * @param address 
 	 * @throws Exception
 	 */
-	public void init(Map<String, String> conf) throws Exception;
+	public void init(Map<String, String> conf, InetAddress address) throws Exception;
 
 	/**
 	 * Register this worker so that other workers can discover it

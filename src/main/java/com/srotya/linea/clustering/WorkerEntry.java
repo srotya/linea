@@ -28,6 +28,7 @@ import com.srotya.linea.utils.NetUtils;
 public class WorkerEntry implements Serializable, Comparable<WorkerEntry> {
 
 	private static final long serialVersionUID = 1L;
+	private int workerId;
 	private InetAddress workerAddress;
 	private long lastContactTimestamp;
 	private int dataPort;
@@ -115,6 +116,20 @@ public class WorkerEntry implements Serializable, Comparable<WorkerEntry> {
 	 */
 	public void setQourumEstablished(boolean qourumEstablished) {
 		this.qourumEstablished = qourumEstablished;
+	}
+
+	/**
+	 * @return the workerId
+	 */
+	public int getWorkerId() {
+		return workerId;
+	}
+
+	/**
+	 * @param workerId the workerId to set
+	 */
+	public void setWorkerId(int workerId) {
+		this.workerId = workerId;
 	}
 
 	/*
