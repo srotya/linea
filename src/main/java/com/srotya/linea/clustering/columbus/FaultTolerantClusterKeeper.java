@@ -64,6 +64,9 @@ public class FaultTolerantClusterKeeper implements ClusterKeeper, Watcher, Leade
 	@Override
 	public void init(Map<String, String> conf, InetAddress selfAddress) throws Exception {
 		this.selfAddress = selfAddress;
+		assignedWorkerId = new AtomicInteger(-1);
+		isLeader = new AtomicBoolean(false);
+		leaderAddressMap = new ConcurrentHashMap<>();
 		curatorClient = CuratorFrameworkFactory.newClient(conf.getOrDefault("zk.conn.str", "localhost:2181"), 60000,
 				5000, new ExponentialBackoffRetry(3000, 3));
 		curatorClient.start();
@@ -105,14 +108,12 @@ public class FaultTolerantClusterKeeper implements ClusterKeeper, Watcher, Leade
 			}
 			Thread.sleep(1000);
 		}
-		assignedWorkerId = new AtomicInteger(-1);
-		isLeader = new AtomicBoolean(false);
-		leaderAddressMap = new ConcurrentHashMap<>();
 	}
 
 	@Override
 	public int registerWorker(int selfWorkerId, WorkerEntry entry) throws Exception {
 		assignedWorkerId.set(-1);
+//		System.out.println("Requesting id from leader for worker:" + entry);
 		entry.setWorkerId(-1);
 		ZooKeeper zk = curatorClient.getZookeeperClient().getZooKeeper();
 		Gson gson = new Gson();
@@ -126,20 +127,22 @@ public class FaultTolerantClusterKeeper implements ClusterKeeper, Watcher, Leade
 			ls = zk.setData(workerZnode, json.getBytes(), -1);
 		}
 		zk.exists(workerZnode, this);
+		// System.out.println("Waiting for id assignment");
 		while (assignedWorkerId.get() == -1) {
 			// poll for worker id assignment
-			logger.info("Waiting for leader to assign an id to worker:" + entry.getWorkerAddress());
+			// System.out.print(".\r");
 			Thread.sleep(1000);
 		}
 		entry.setWorkerId(assignedWorkerId.get());
-		logger.info("Leader assigned the id:" + assignedWorkerId.get() + " to worker:" + entry.getWorkerAddress());
+		System.out
+				.println("Leader assigned the id:" + assignedWorkerId.get() + " to worker:" + entry.getWorkerAddress());
 		return assignedWorkerId.get();
 	}
 
 	@Override
 	public Map<Integer, WorkerEntry> pollWorkers() throws Exception {
 		ZooKeeper zk = curatorClient.getZookeeperClient().getZooKeeper();
-		String zkRoot = basePath + LEADER_PATH;
+		String zkRoot = basePath + WORKERS;
 		Gson gson = new Gson();
 		Map<Integer, WorkerEntry> entries = new HashMap<>();
 		List<String> children = zk.getChildren(zkRoot, false);
@@ -162,44 +165,52 @@ public class FaultTolerantClusterKeeper implements ClusterKeeper, Watcher, Leade
 	@Override
 	public void takeLeadership(CuratorFramework leader) throws Exception {
 		logger.info("Leader elected!" + selfAddress);
-		isLeader.set(true);
-		ZooKeeper zk = leader.getZookeeperClient().getZooKeeper();
-		Gson gson = new Gson();
-		JsonObject object = new JsonObject();
-		object.addProperty("address", selfAddress.getHostAddress());
-		String leaderData = gson.toJson(object);
-		Stat ls = zk.exists(basePath + LEADER_PATH, false);
-		if (ls == null) {
-			zk.create(basePath + LEADER_PATH, leaderData.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE,
-					CreateMode.PERSISTENT);
-		} else {
-			// update znode with this machines's leader info
-			zk.setData(basePath + LEADER_PATH, leaderData.getBytes(), -1);
-		}
-		String zkRoot = basePath + WORKERS;
-		while (isLeader.get()) {
-			List<String> children = zk.getChildren(zkRoot, false);
-			Collections.sort(children);
-			int workerId = 0;
-			for (String child : children) {
-				String ip = child;
-				child = zkRoot + "/" + child;
-				Stat stat = zk.exists(child, false);
-				byte[] data = zk.getData(child, false, stat);
-				WorkerEntry value = gson.fromJson(new String(data), WorkerEntry.class);
-				if (System.currentTimeMillis() - value.getLastContactTimestamp() >= 5000) {
-					leaderAddressMap.remove(ip);
-					continue;
+		try {
+			isLeader.set(true);
+			ZooKeeper zk = leader.getZookeeperClient().getZooKeeper();
+			Gson gson = new Gson();
+			String zkRoot = basePath + WORKERS;
+			while (isLeader.get()) {
+				JsonObject object = new JsonObject();
+				object.addProperty("address", selfAddress.getHostAddress());
+				object.addProperty("timestamp", System.currentTimeMillis());
+				String leaderData = gson.toJson(object);
+				Stat ls = zk.exists(basePath + LEADER_PATH, false);
+				if (ls == null) {
+					zk.create(basePath + LEADER_PATH, leaderData.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE,
+							CreateMode.EPHEMERAL);
+				} else {
+					// update znode with this machines's leader info
+					zk.setData(basePath + LEADER_PATH, leaderData.getBytes(), -1);
 				}
-				leaderAddressMap.put(ip, workerId);
-				value.setWorkerId(workerId);
-				zk.setData(basePath + WORKERS + "/" + value.getWorkerAddress().getHostAddress(),
-						gson.toJson(value).getBytes(), ls.getVersion() + 1);
-				workerId++;
+				List<String> children = zk.getChildren(zkRoot, false);
+				Collections.sort(children);
+				logger.info("Leader loop active:" + children);
+				int workerId = 0;
+				for (String child : children) {
+					String ip = child;
+					child = zkRoot + "/" + child;
+					Stat stat = zk.exists(child, false);
+					byte[] data = zk.getData(child, false, stat);
+					WorkerEntry value = gson.fromJson(new String(data), WorkerEntry.class);
+					if (System.currentTimeMillis() - value.getLastContactTimestamp() >= 5000) {
+						System.out.println("Evicting worker:" + value + " from workermap");
+						leaderAddressMap.remove(ip);
+						zk.delete(child, -1);
+						continue;
+					}
+					leaderAddressMap.put(ip, workerId);
+					value.setWorkerId(workerId);
+					zk.setData(child, gson.toJson(value).getBytes(), -1);
+					workerId++;
+				}
+				Thread.sleep(1000);
 			}
-			Thread.sleep(1000);
+			logger.info("Stepping down as a leader");
+			isLeader.set(false);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		isLeader.set(false);
 	}
 
 	@Override

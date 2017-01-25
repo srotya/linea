@@ -26,20 +26,21 @@ public class AckerEntry implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 	private String sourceSpout;
-	private Integer sourceTaskId;
-	private Long createTime;
-	private Long value;
+	private int sourceTaskId;
+	private long createTime;
+	private long value;
 
 	public AckerEntry() {
 		createTime = System.currentTimeMillis();
 	}
 
-	public AckerEntry(String sourceSpout, Integer sourceTaskId, Long value) {
+	public AckerEntry(String sourceSpout, int sourceTaskId, long value) {
 		this();
 		this.sourceSpout = sourceSpout;
 		this.sourceTaskId = sourceTaskId;
 		this.value = value;
 	}
+
 
 	/**
 	 * @return the sourceSpout
@@ -49,8 +50,7 @@ public class AckerEntry implements Serializable {
 	}
 
 	/**
-	 * @param sourceSpout
-	 *            the sourceSpout to set
+	 * @param sourceSpout the sourceSpout to set
 	 */
 	public void setSourceSpout(String sourceSpout) {
 		this.sourceSpout = sourceSpout;
@@ -59,37 +59,35 @@ public class AckerEntry implements Serializable {
 	/**
 	 * @return the sourceTaskId
 	 */
-	public Integer getSourceTaskId() {
+	public int getSourceTaskId() {
 		return sourceTaskId;
 	}
 
 	/**
-	 * @param sourceTaskId
-	 *            the sourceTaskId to set
+	 * @param sourceTaskId the sourceTaskId to set
 	 */
-	public void setSourceTaskId(Integer sourceTaskId) {
+	public void setSourceTaskId(int sourceTaskId) {
 		this.sourceTaskId = sourceTaskId;
 	}
 
 	/**
 	 * @return the value
 	 */
-	public Long getValue() {
+	public long getValue() {
 		return value;
 	}
 
 	/**
-	 * @param value
-	 *            the value to set
+	 * @param value the value to set
 	 */
-	public void setValue(Long value) {
+	public void setValue(long value) {
 		this.value = value;
 	}
 
 	/**
 	 * @return the createTime
 	 */
-	public Long getCreateTime() {
+	public long getCreateTime() {
 		return createTime;
 	}
 

@@ -37,8 +37,8 @@ import com.srotya.linea.network.nio.TCPServer;
 import com.srotya.linea.processors.BoltExecutor;
 
 /**
- * {@link Tuple} router that is responsible for sending messages across instances
- * and workers in a topology.
+ * {@link Tuple} router that is responsible for sending messages across
+ * instances and workers in a topology.
  * 
  * @author ambud
  */
@@ -66,8 +66,8 @@ public class Router<E extends Tuple> {
 	 * @param workerCount
 	 * @param executorMap
 	 */
-	public Router(Class<E> classOf, EventFactory<E> factory, Columbus columbus, int workerCount, Map<String, BoltExecutor<E>> executorMap,
-			Map<String, String> conf, CopyTranslator<E> translator) {
+	public Router(Class<E> classOf, EventFactory<E> factory, Columbus columbus, int workerCount,
+			Map<String, BoltExecutor<E>> executorMap, Map<String, String> conf, CopyTranslator<E> translator) {
 		this.classOf = classOf;
 		this.factory = factory;
 		this.columbus = columbus;
@@ -169,8 +169,6 @@ public class Router<E extends Tuple> {
 			}
 			break;
 		case SHUFFLE:
-			// taskId = Math.abs((int) (event.getEventId() % totalParallelism));
-
 			// adding local only shuffling to reduce network traffic
 			taskId = nextBolt.getParallelism() * columbus.getSelfWorkerId()
 					+ Math.abs((int) (event.getEventId() % nextBolt.getParallelism()));

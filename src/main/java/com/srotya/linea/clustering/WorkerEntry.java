@@ -132,14 +132,13 @@ public class WorkerEntry implements Serializable, Comparable<WorkerEntry> {
 		this.workerId = workerId;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
+	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
-		return "WorkerEntry [workerAddress=" + workerAddress + ", lastContactTimestamp=" + lastContactTimestamp + "]";
+		return "WorkerEntry [workerId=" + workerId + ", workerAddress=" + workerAddress + ", lastContactTimestamp="
+				+ lastContactTimestamp + ", dataPort=" + dataPort + ", qourumEstablished=" + qourumEstablished + "]";
 	}
 
 }

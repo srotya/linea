@@ -81,9 +81,9 @@ public class BoltExecutor<E extends Tuple> {
 		this.taskProcessorMap = new HashMap<>();
 
 		this.templateBoltInstance = deserializeBoltInstance(serializedBoltInstance);
-		if(templateBoltInstance instanceof Spout) {
+		if (templateBoltInstance instanceof Spout) {
 			this.es = Executors.newFixedThreadPool(parallelism * 2);
-		}else {
+		} else {
 			this.es = Executors.newFixedThreadPool(parallelism);
 		}
 		this.copyTranslator = copyTranslator;
@@ -107,7 +107,7 @@ public class BoltExecutor<E extends Tuple> {
 			for (int i = 0; i < parallelism; i++) {
 				int taskId = columbus.getSelfWorkerId() * parallelism + i;
 				Bolt<E> object = deserializeBoltInstance(serializedBoltInstance);
-				object.configure(conf, taskId, new Collector<E>(factory, router, object.getBoltName(), taskId));
+				object.configure(conf, taskId, new Collector<E>(factory, router, object.getBoltName(), taskId, parallelism));
 				taskProcessorMap.put(taskId, new BoltExecutorWrapper<E>(factory, es, object));
 			}
 			for (Entry<Integer, BoltExecutorWrapper<E>> entry : taskProcessorMap.entrySet()) {

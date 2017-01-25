@@ -47,7 +47,7 @@ public class Collector<E extends Tuple> {
 	 * @param lComponentId
 	 * @param taskId
 	 */
-	public Collector(TupleFactory<E> factory, Router<E> router, String lComponentId, int taskId) {
+	public Collector(TupleFactory<E> factory, Router<E> router, String lComponentId, int taskId, int parallelism) {
 		this.factory = factory;
 		this.router = router;
 		this.lComponentId = lComponentId;

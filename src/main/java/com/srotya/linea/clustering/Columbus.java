@@ -40,7 +40,7 @@ import com.srotya.linea.Topology;
 public class Columbus implements Runnable {
 
 	private static final String KEEPER_CLASS_FQCN = "linea.keeper.class";
-	private static final String DEFAULT_KEEPER_CLASS = "com.srotya.linea.clustering.columbus.FaultTolerantClusterKeeper";// "com.srotya.linea.clustering.columbus.ZookeeperClusterKeeper";
+	private static final String DEFAULT_KEEPER_CLASS = "com.srotya.linea.clustering.columbus.ZookeeperClusterKeeper";//"com.srotya.linea.clustering.columbus.FaultTolerantClusterKeeper";// 
 	private static final Logger logger = Logger.getLogger(Columbus.class.getName());
 	private AtomicInteger workerCount = new AtomicInteger(0);
 	private Map<Integer, WorkerEntry> workerMap;
@@ -61,7 +61,7 @@ public class Columbus implements Runnable {
 				.getByName(conf.getOrDefault(Topology.WORKER_BIND_ADDRESS, Topology.DEFAULT_BIND_ADDRESS));// NetworkUtils.getIPv4Address(iface);
 		this.workerMap = new ConcurrentHashMap<>();
 
-		this.selfWorkerId = Integer.parseInt(conf.getOrDefault("gibrish", "-1"));
+		this.selfWorkerId = Integer.parseInt(conf.getOrDefault(Topology.WORKER_ID, "-1"));
 		this.idCacheFile = new File("./target/.idCache");
 		// check cache, uses the same logic as
 		// https://issues.apache.org/jira/browse/KAFKA-1070
