@@ -21,7 +21,6 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import com.lmax.disruptor.EventHandler;
@@ -38,36 +37,34 @@ import com.srotya.linea.network.KryoObjectEncoder;
 public class TCPClient<E extends Tuple> implements EventHandler<E> {
 
 	private static final Logger logger = Logger.getLogger(TCPClient.class.getName());
-	private Map<Integer, OutputStream> socketMap;
 	private Columbus columbus;
 	private int clientThreads;
 	private int clientThreadId;
+	private Map<WorkerEntry, OutputStream> socketMap;
 
 	public TCPClient(Columbus columbus, int clientThreadId, int clientThreads) {
 		this.columbus = columbus;
 		this.clientThreadId = clientThreadId;
 		this.clientThreads = clientThreads;
-		socketMap = new HashMap<>();
+		this.socketMap = new HashMap<>();
 	}
 
 	public void start() throws Exception {
-		for (Entry<Integer, WorkerEntry> entry : columbus.getWorkerMap().entrySet()) {
-			if (entry.getKey() != columbus.getSelfWorkerId()) {
-				Integer key = entry.getKey();
-				WorkerEntry value = entry.getValue();
-				retryConnectLoop(key, value);
+		for (WorkerEntry entry : columbus.getWorkerList()) {
+			if (entry != columbus.getSelfWorker()) {
+				retryConnectLoop(entry);
 			}
 		}
 	}
 
-	private void retryConnectLoop(Integer key, WorkerEntry value) throws InterruptedException, IOException {
+	private void retryConnectLoop(WorkerEntry value) throws InterruptedException, IOException {
 		boolean connected = false;
 		int retryCount = 1;
-		while (!connected && retryCount < 100) {
+		while (!connected && retryCount < 2) {
 			Socket socket = tryConnect(value, retryCount);
 			if (socket != null) {
 				connected = true;
-				socketMap.put(key, new BufferedOutputStream(socket.getOutputStream(), 8192 * 4));
+				socketMap.put(value, new BufferedOutputStream(socket.getOutputStream(), 8192 * 4));
 			}
 		}
 	}
@@ -93,7 +90,7 @@ public class TCPClient<E extends Tuple> implements EventHandler<E> {
 		int workerId = event.getDestinationWorkerId();
 		try {
 			if (workerId % clientThreads == clientThreadId) {
-				OutputStream stream = socketMap.get(workerId);
+				OutputStream stream = socketMap.get(columbus.getByWorkerByIndex(workerId));
 				byte[] bytes = KryoObjectEncoder.eventToByteArray(event);
 				stream.write(bytes);
 				if (endOfBatch) {
@@ -101,9 +98,9 @@ public class TCPClient<E extends Tuple> implements EventHandler<E> {
 				}
 			}
 		} catch (IOException e) {
-			WorkerEntry entry = columbus.getWorkerMap().get(workerId);
+			WorkerEntry entry = columbus.getByWorkerByIndex(workerId);
 			logger.severe("Lost worker connection to WorkerId:" + workerId + "\tAddress:" + entry.getWorkerAddress());
-			retryConnectLoop(workerId, entry);
+			retryConnectLoop(entry);
 			if (workerId % clientThreads == clientThreadId) {
 				OutputStream stream = socketMap.get(workerId);
 				byte[] bytes = KryoObjectEncoder.eventToByteArray(event);

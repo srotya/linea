@@ -30,6 +30,7 @@ import com.srotya.linea.Tuple;
 import com.srotya.linea.MurmurHash;
 import com.srotya.linea.Topology;
 import com.srotya.linea.clustering.Columbus;
+import com.srotya.linea.clustering.WorkerEntry;
 import com.srotya.linea.disruptor.CopyTranslator;
 import com.srotya.linea.disruptor.ROUTING_TYPE;
 import com.srotya.linea.network.nio.TCPClient;
@@ -96,7 +97,7 @@ public class Router<E extends Tuple> {
 			}
 		});
 
-		while (columbus.getWorkerCount() < workerCount) {
+		while (columbus.size() < workerCount) {
 			Thread.sleep(2000);
 			logger.info("Waiting for worker discovery");
 		}
@@ -151,18 +152,15 @@ public class Router<E extends Tuple> {
 			return;
 		}
 		int taskId = -1;
-		int workerCount = columbus.getWorkerCount();
 
 		// normalize parallelism
-		int totalParallelism = nextBolt.getParallelism(); // get
-															// local
-															// parallelism
-		totalParallelism = workerCount * totalParallelism;
 		switch (nextBolt.getTemplateBoltInstance().getRoutingType()) {
 		case GROUPBY:
 			Object key = event.getGroupByKey();
 			if (key != null) {
-				taskId = Math.abs(MurmurHash.hash32(key.toString()) % totalParallelism);
+				int totalParallelism = columbus.size() * nextBolt.getParallelism();
+				int hash = Math.abs(MurmurHash.hash32(key.toString()));
+				taskId = hash % totalParallelism;
 			} else {
 				System.err.println("Droping event, missing field group by:" + nextBoltId);
 				// discard event
@@ -196,7 +194,9 @@ public class Router<E extends Tuple> {
 			destinationWorker = taskId / nextBolt.getParallelism();
 		}
 
-		if (destinationWorker == columbus.getSelfWorkerId()) {
+		WorkerEntry destinationWorkerEntry = columbus.getByWorkerByIndex(destinationWorker);
+
+		if (destinationWorkerEntry == columbus.getSelfWorker()) {
 			nextBolt.process(taskId, event);
 		} else {
 			// logger.info("Network routing");

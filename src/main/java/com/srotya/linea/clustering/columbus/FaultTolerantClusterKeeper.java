@@ -15,64 +15,39 @@
  */
 package com.srotya.linea.clustering.columbus;
 
-import java.net.InetAddress;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.framework.recipes.leader.LeaderSelector;
-import org.apache.curator.framework.recipes.leader.LeaderSelectorListener;
-import org.apache.curator.framework.state.ConnectionState;
-import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.data.Stat;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.srotya.linea.clustering.ClusterKeeper;
+import com.srotya.linea.clustering.Columbus;
 import com.srotya.linea.clustering.WorkerEntry;
 
 /**
  * @author ambud
  */
-public class FaultTolerantClusterKeeper implements ClusterKeeper, Watcher, LeaderSelectorListener {
+public class FaultTolerantClusterKeeper implements ClusterKeeper, Watcher {
 
-	private static final String LE_PATH = "/le";
 	private static final Logger logger = Logger.getLogger(FaultTolerantClusterKeeper.class.getName());
 	private static final String WORKERS = "/workers";
-	private static final String LEADER_PATH = "/leader";
-	private CuratorFramework curatorClient;
-	private LeaderSelector leaderSelector;
 	private String basePath;
-	private InetAddress selfAddress;
-	private AtomicInteger assignedWorkerId;
-	private AtomicBoolean isLeader;
-	private Map<String, Integer> leaderAddressMap;
+	private Columbus columbus;
+	private ZooKeeper zk;
 
 	@Override
-	public void init(Map<String, String> conf, InetAddress selfAddress) throws Exception {
-		this.selfAddress = selfAddress;
-		assignedWorkerId = new AtomicInteger(-1);
-		isLeader = new AtomicBoolean(false);
-		leaderAddressMap = new ConcurrentHashMap<>();
-		curatorClient = CuratorFrameworkFactory.newClient(conf.getOrDefault("zk.conn.str", "localhost:2181"), 60000,
-				5000, new ExponentialBackoffRetry(3000, 3));
-		curatorClient.start();
+	public void init(Map<String, String> conf, Columbus columbus) throws Exception {
+		this.columbus = columbus;
+		zk = new ZooKeeper(conf.getOrDefault("zk.conn.str", "localhost:2181"), 60000, this);
 		logger.info("Connected to zookeeper");
 		basePath = conf.getOrDefault("zk.base.path", "/linea");
-		ZooKeeper zk = curatorClient.getZookeeperClient().getZooKeeper();
 		Stat exists = zk.exists(basePath, false);
 		if (exists == null) {
 			zk.create(basePath, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
@@ -83,134 +58,22 @@ public class FaultTolerantClusterKeeper implements ClusterKeeper, Watcher, Leade
 			zk.create(basePath + WORKERS, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 			logger.info("Missing worker path:" + basePath + WORKERS + " created");
 		}
-		exists = zk.exists(basePath + LE_PATH, false);
-		if (exists == null) {
-			zk.create(basePath + LE_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-			logger.info("Missing leader election path:" + basePath + LE_PATH + " created");
-		}
 
-		leaderSelector = new LeaderSelector(curatorClient, basePath + LE_PATH, this);
-		leaderSelector.autoRequeue();
-		leaderSelector.start();
-		logger.info("Started leader election process");
-
-		AtomicBoolean bool = new AtomicBoolean(false);
-		while (!bool.get()) {
-			try {
-				Stat leader = zk.exists(basePath + LEADER_PATH, false);
-				if (leader == null) {
-					logger.info("Waiting for leader election");
-				} else {
-					bool.set(true);
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			Thread.sleep(1000);
-		}
 	}
 
 	@Override
-	public int registerWorker(int selfWorkerId, WorkerEntry entry) throws Exception {
-		assignedWorkerId.set(-1);
-//		System.out.println("Requesting id from leader for worker:" + entry);
-		entry.setWorkerId(-1);
-		ZooKeeper zk = curatorClient.getZookeeperClient().getZooKeeper();
+	public int updateWorkerEntry(WorkerEntry entry) throws Exception {
 		Gson gson = new Gson();
 		String json = gson.toJson(entry);
 		String workerZnode = basePath + WORKERS + "/" + entry.getWorkerAddress().getHostAddress() + ":"
 				+ entry.getDataPort();
-		Stat ls = zk.exists(workerZnode, false);
+		Stat ls = zk.exists(workerZnode, this);
 		if (ls == null) {
-			zk.create(workerZnode, json.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+			zk.create(workerZnode, json.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
 		} else {
 			ls = zk.setData(workerZnode, json.getBytes(), -1);
 		}
-		zk.exists(workerZnode, this);
-		// System.out.println("Waiting for id assignment");
-		while (assignedWorkerId.get() == -1) {
-			// poll for worker id assignment
-			// System.out.print(".\r");
-			Thread.sleep(1000);
-		}
-		entry.setWorkerId(assignedWorkerId.get());
-		System.out
-				.println("Leader assigned the id:" + assignedWorkerId.get() + " to worker:" + entry.getWorkerAddress());
-		return assignedWorkerId.get();
-	}
-
-	@Override
-	public Map<Integer, WorkerEntry> pollWorkers() throws Exception {
-		ZooKeeper zk = curatorClient.getZookeeperClient().getZooKeeper();
-		String zkRoot = basePath + WORKERS;
-		Gson gson = new Gson();
-		Map<Integer, WorkerEntry> entries = new HashMap<>();
-		List<String> children = zk.getChildren(zkRoot, false);
-		for (String child : children) {
-			child = zkRoot + "/" + child;
-			Stat stat = zk.exists(child, true);
-			byte[] data = zk.getData(child, true, stat);
-			WorkerEntry value = gson.fromJson(new String(data), WorkerEntry.class);
-			child = child.substring(child.lastIndexOf("/") + 1, child.length());
-			entries.put(value.getWorkerId(), value);
-		}
-		return entries;
-	}
-
-	@Override
-	public void stateChanged(CuratorFramework arg0, ConnectionState state) {
-		logger.fine("Connection state changed:" + state);
-	}
-
-	@Override
-	public void takeLeadership(CuratorFramework leader) throws Exception {
-		logger.info("Leader elected!" + selfAddress);
-		try {
-			isLeader.set(true);
-			ZooKeeper zk = leader.getZookeeperClient().getZooKeeper();
-			Gson gson = new Gson();
-			String zkRoot = basePath + WORKERS;
-			while (isLeader.get()) {
-				JsonObject object = new JsonObject();
-				object.addProperty("address", selfAddress.getHostAddress());
-				object.addProperty("timestamp", System.currentTimeMillis());
-				String leaderData = gson.toJson(object);
-				Stat ls = zk.exists(basePath + LEADER_PATH, false);
-				if (ls == null) {
-					zk.create(basePath + LEADER_PATH, leaderData.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE,
-							CreateMode.EPHEMERAL);
-				} else {
-					// update znode with this machines's leader info
-					zk.setData(basePath + LEADER_PATH, leaderData.getBytes(), -1);
-				}
-				List<String> children = zk.getChildren(zkRoot, false);
-				Collections.sort(children);
-				logger.info("Leader loop active:" + children);
-				int workerId = 0;
-				for (String child : children) {
-					String ip = child;
-					child = zkRoot + "/" + child;
-					Stat stat = zk.exists(child, false);
-					byte[] data = zk.getData(child, false, stat);
-					WorkerEntry value = gson.fromJson(new String(data), WorkerEntry.class);
-					if (System.currentTimeMillis() - value.getLastContactTimestamp() >= 5000) {
-						System.out.println("Evicting worker:" + value + " from workermap");
-						leaderAddressMap.remove(ip);
-						zk.delete(child, -1);
-						continue;
-					}
-					leaderAddressMap.put(ip, workerId);
-					value.setWorkerId(workerId);
-					zk.setData(child, gson.toJson(value).getBytes(), -1);
-					workerId++;
-				}
-				Thread.sleep(1000);
-			}
-			logger.info("Stepping down as a leader");
-			isLeader.set(false);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		return 0;
 	}
 
 	@Override
@@ -220,25 +83,28 @@ public class FaultTolerantClusterKeeper implements ClusterKeeper, Watcher, Leade
 			System.out.println("Ignoring event for base path:" + event.getPath());
 			return;
 		}
-		System.out.println("Zk path:" + event.getPath());
-		if (event.getType() == EventType.NodeDataChanged) {
-			if (!event.getPath().contains(selfAddress.getHostAddress())) {
-				// ignore event
-				return;
-			}
+		if (event.getType() == EventType.NodeCreated) {
 			try {
 				Gson gson = new Gson();
-				ZooKeeper zk = curatorClient.getZookeeperClient().getZooKeeper();
 				Stat stat = zk.exists(event.getPath(), false);
 				if (stat != null) {
 					byte[] data = zk.getData(event.getPath(), false, stat);
 					WorkerEntry entry = gson.fromJson(new String(data), WorkerEntry.class);
-					assignedWorkerId.set(entry.getWorkerId());
+					columbus.addWorker(entry);
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+		} else if (event.getType() == EventType.NodeDeleted) {
+			System.out.println("Worker died:" + event.getPath());
 		}
+	}
+
+	@Override
+	public void notifyWorkerFailure(WorkerEntry entry) throws Exception {
+		String zkRoot = basePath + WORKERS;
+		System.out.println("Worker failure:" + entry);
+		zk.delete(zkRoot + "/" + entry.getWorkerAddress().getHostAddress() + ":" + entry.getDataPort(), -1);
 	}
 
 }
