@@ -15,9 +15,8 @@
  */
 package com.srotya.linea.processors;
 
-import com.srotya.linea.Event;
+import com.srotya.linea.Tuple;
 import com.srotya.linea.disruptor.ROUTING_TYPE;
-import com.srotya.linea.utils.Constants;
 
 /**
  * Spout is a type of {@link Bolt} that generates data that is processed
@@ -25,19 +24,19 @@ import com.srotya.linea.utils.Constants;
  * 
  * @author ambud
  */
-public abstract class Spout implements Bolt {
+public abstract class Spout<E extends Tuple> implements Bolt<E> {
 
 	private static final long serialVersionUID = 1L;
 
 	@Override
-	public void process(Event event) {
-		Object object = event.getHeaders().get(Constants.FIELD_GROUPBY_ROUTING_KEY);
-		if(object!=null) {
-			Boolean type = (Boolean) event.getHeaders().get(Constants.FIELD_EVENT_TYPE);
+	public void process(E event) {
+		Object tupleId = event.getGroupByKey();
+		if(tupleId!=null) {
+			boolean type = event.isAck();
 			if(type) {
-				ack((Long)object);
+				ack((Long)tupleId);
 			}else {
-				fail((Long)object);
+				fail((Long)tupleId);
 			}
 		}
 	}
@@ -53,6 +52,13 @@ public abstract class Spout implements Bolt {
 	 * @param eventId
 	 */
 	public abstract void fail(Long eventId);
+	
+	@Override
+	public final String getBoltName() {
+		return "Spout"+getSpoutName();
+	}
+	
+	public abstract String getSpoutName();
 	
 	@Override
 	public ROUTING_TYPE getRoutingType() {

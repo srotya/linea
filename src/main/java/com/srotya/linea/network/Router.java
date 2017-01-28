@@ -22,10 +22,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
+import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
-import com.srotya.linea.Event;
+import com.srotya.linea.Tuple;
 import com.srotya.linea.MurmurHash;
 import com.srotya.linea.Topology;
 import com.srotya.linea.clustering.Columbus;
@@ -34,31 +35,30 @@ import com.srotya.linea.disruptor.ROUTING_TYPE;
 import com.srotya.linea.network.nio.TCPClient;
 import com.srotya.linea.network.nio.TCPServer;
 import com.srotya.linea.processors.BoltExecutor;
-import com.srotya.linea.processors.DisruptorUnifiedFactory;
-import com.srotya.linea.utils.Constants;
 
 /**
- * {@link Event} router that is responsible for sending messages across
+ * {@link Tuple} router that is responsible for sending messages across
  * instances and workers in a topology.
  * 
  * @author ambud
  */
-public class Router {
+public class Router<E extends Tuple> {
 
 	private static final Logger logger = Logger.getLogger(Router.class.getName());
-	private Disruptor<Event> networkTranmissionDisruptor;
-	private DisruptorUnifiedFactory factory;
-	private Map<String, BoltExecutor> executorMap;
-	private CopyTranslator translator;
+	private Disruptor<E> networkTranmissionDisruptor;
+	private EventFactory<E> factory;
+	private Map<String, BoltExecutor<E>> executorMap;
+	private CopyTranslator<E> translator;
 	private Columbus columbus;
-	private TCPServer server;
+	private TCPServer<E> server;
 	private int workerCount;
 	private ExecutorService pool;
 	private int dataPort;
 	// private TCPClient client;
-	private List<TCPClient> clients;
+	private List<TCPClient<E>> clients;
 	private String bindAddress;
 	private int clientThreadCount;
+	private Class<E> classOf;
 
 	/**
 	 * @param factory
@@ -66,12 +66,14 @@ public class Router {
 	 * @param workerCount
 	 * @param executorMap
 	 */
-	public Router(DisruptorUnifiedFactory factory, Columbus columbus, int workerCount,
-			Map<String, BoltExecutor> executorMap, Map<String, String> conf) {
+	public Router(Class<E> classOf, EventFactory<E> factory, Columbus columbus, int workerCount,
+			Map<String, BoltExecutor<E>> executorMap, Map<String, String> conf, CopyTranslator<E> translator) {
+		this.classOf = classOf;
 		this.factory = factory;
 		this.columbus = columbus;
 		this.workerCount = workerCount;
 		this.executorMap = executorMap;
+		this.translator = translator;
 		this.bindAddress = conf.getOrDefault(Topology.WORKER_BIND_ADDRESS, Topology.DEFAULT_BIND_ADDRESS);
 		this.dataPort = Integer.parseInt(conf.getOrDefault(Topology.WORKER_DATA_PORT, Topology.DEFAULT_DATA_PORT));
 		this.clientThreadCount = Integer.parseInt(conf.getOrDefault(Topology.CLIENT_THREAD_COUNT, "1"));
@@ -82,9 +84,10 @@ public class Router {
 	 * 
 	 * @throws Exception
 	 */
+	@SuppressWarnings("unchecked")
 	public void start() throws Exception {
 		pool = Executors.newFixedThreadPool(1 + clientThreadCount);
-		server = new TCPServer(this, bindAddress, dataPort);
+		server = new TCPServer<E>(classOf, this, bindAddress, dataPort);
 		pool.submit(() -> {
 			try {
 				server.start();
@@ -98,17 +101,16 @@ public class Router {
 			logger.info("Waiting for worker discovery");
 		}
 
-		networkTranmissionDisruptor = new Disruptor<Event>(factory, 1024 * 8, pool, ProducerType.MULTI,
+		networkTranmissionDisruptor = new Disruptor<E>(factory, 1024 * 8, pool, ProducerType.MULTI,
 				new YieldingWaitStrategy());
 		clients = new ArrayList<>(clientThreadCount);
 		for (int i = 0; i < clientThreadCount; i++) {
-			TCPClient client = new TCPClient(getColumbus(), i, clientThreadCount);
+			TCPClient<E> client = new TCPClient<E>(getColumbus(), i, clientThreadCount);
 			client.start();
 			clients.add(client);
 		}
 		networkTranmissionDisruptor.handleEventsWith(clients.toArray(new TCPClient[1]));
 		networkTranmissionDisruptor.start();
-		translator = new CopyTranslator();
 	}
 
 	/**
@@ -125,27 +127,27 @@ public class Router {
 	/**
 	 * Direct local routing
 	 * 
-	 * @param nextProcessorId
+	 * @param nextBoltName
 	 * @param taskId
-	 * @param event
+	 * @param tuple
 	 */
-	public void directLocalRouteEvent(String nextProcessorId, int taskId, Event event) {
-		executorMap.get(nextProcessorId).process(taskId, event);
+	public void directLocalRouteEvent(String nextBoltName, int taskId, E tuple) {
+		executorMap.get(nextBoltName).process(taskId, tuple);
 	}
 
 	/**
-	 * {@link Router} method called for {@link Event} routing. This method uses
+	 * {@link Router} method called for {@link Tuple} routing. This method uses
 	 * {@link ROUTING_TYPE} for the nextProcessorId to fetch the
 	 * {@link BoltExecutor} and get the taskId to route the message to.
 	 * 
 	 * @param nextBoltId
-	 * @param event
+	 * @param tuple
 	 */
-	public void routeEvent(String nextBoltId, Event event) {
-		BoltExecutor nextBolt = executorMap.get(nextBoltId);
+	public void routeTuple(E tuple) {
+		BoltExecutor<E> nextBolt = executorMap.get(tuple.getNextBoltId());
 		if (nextBolt == null) {
 			// drop this event
-			System.err.println("Next bolt null, droping event:" + event);
+			System.err.println("Next bolt null, droping event:" + tuple);
 			return;
 		}
 		int taskId = -1;
@@ -158,38 +160,36 @@ public class Router {
 		totalParallelism = workerCount * totalParallelism;
 		switch (nextBolt.getTemplateBoltInstance().getRoutingType()) {
 		case GROUPBY:
-			Object key = event.getHeaders().get(Constants.FIELD_GROUPBY_ROUTING_KEY);
+			Object key = tuple.getGroupByKey();
 			if (key != null) {
 				taskId = Math.abs(MurmurHash.hash32(key.toString()) % totalParallelism);
 			} else {
-				System.err.println("Droping event, missing field group by:" + nextBoltId);
+				System.err.println("Droping event, missing field group by:" + tuple.getNextBoltId());
 				// discard event
 			}
 			break;
 		case SHUFFLE:
-			// taskId = Math.abs((int) (event.getEventId() % totalParallelism));
-
 			// adding local only shuffling to reduce network traffic
 			taskId = nextBolt.getParallelism() * columbus.getSelfWorkerId()
-					+ Math.abs((int) (event.getEventId() % nextBolt.getParallelism()));
+					+ Math.abs((int) (tuple.getTupleId() % nextBolt.getParallelism()));
 			break;
 		}
 
 		// check if this taskId is local to this worker
-		routeToTaskId(nextBoltId, event, nextBolt, taskId);
+		routeToTaskId(tuple, nextBolt, taskId);
 	}
 
 	/**
 	 * Used to either local or network route an event based on worker id.
 	 * 
 	 * @param nextBoltId
-	 * @param event
+	 * @param tuple
 	 * @param nextBolt
 	 * @param taskId
 	 */
-	public void routeToTaskId(String nextBoltId, Event event, BoltExecutor nextBolt, int taskId) {
+	public void routeToTaskId(E tuple, BoltExecutor<E> nextBolt, int taskId) {
 		if (nextBolt == null) {
-			nextBolt = executorMap.get(nextBoltId);
+			nextBolt = executorMap.get(tuple.getNextBoltId());
 		}
 		int destinationWorker = 0;
 		if (taskId >= nextBolt.getParallelism()) {
@@ -197,13 +197,12 @@ public class Router {
 		}
 
 		if (destinationWorker == columbus.getSelfWorkerId()) {
-			nextBolt.process(taskId, event);
+			nextBolt.process(taskId, tuple);
 		} else {
 			// logger.info("Network routing");
-			event.getHeaders().put(Constants.FIELD_NEXT_BOLT, nextBoltId);
-			event.getHeaders().put(Constants.FIELD_DESTINATION_TASK_ID, taskId);
-			event.getHeaders().put(Constants.FIELD_DESTINATION_WORKER_ID, destinationWorker);
-			networkTranmissionDisruptor.publishEvent(translator, event);
+			tuple.setDestinationTaskId(taskId);
+			tuple.setDestinationWorkerId(destinationWorker);
+			networkTranmissionDisruptor.publishEvent(translator, tuple);
 		}
 	}
 

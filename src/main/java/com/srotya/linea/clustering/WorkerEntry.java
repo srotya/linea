@@ -15,24 +15,22 @@
  */
 package com.srotya.linea.clustering;
 
-import java.io.Serializable;
 import java.net.InetAddress;
 
 import com.srotya.linea.utils.NetUtils;
 
 /**
+ * Entry for the {@link Columbus} worker map.
+ * 
  * @author ambud
  */
-public class WorkerEntry implements Serializable, Comparable<WorkerEntry> {
+public class WorkerEntry implements Comparable<WorkerEntry> {
 
-	private static final long serialVersionUID = 1L;
+	private int workerId;
 	private InetAddress workerAddress;
 	private long lastContactTimestamp;
 	private int dataPort;
 	private boolean qourumEstablished;
-
-	public WorkerEntry() {
-	}
 
 	public WorkerEntry(InetAddress workerAddress, int dataPort, long lastContactTimestamp) {
 		this.workerAddress = workerAddress;
@@ -74,7 +72,7 @@ public class WorkerEntry implements Serializable, Comparable<WorkerEntry> {
 	public boolean equals(Object obj) {
 		if (obj instanceof WorkerEntry) {
 			WorkerEntry param = (WorkerEntry) obj;
-			return workerAddress == param.workerAddress;
+			return workerAddress.equals(param.workerAddress) && dataPort == param.dataPort;
 		}
 		return false;
 	}
@@ -115,6 +113,21 @@ public class WorkerEntry implements Serializable, Comparable<WorkerEntry> {
 		this.qourumEstablished = qourumEstablished;
 	}
 
+	/**
+	 * @return the workerId
+	 */
+	public int getWorkerId() {
+		return workerId;
+	}
+
+	/**
+	 * @param workerId
+	 *            the workerId to set
+	 */
+	public void setWorkerId(int workerId) {
+		this.workerId = workerId;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -122,7 +135,8 @@ public class WorkerEntry implements Serializable, Comparable<WorkerEntry> {
 	 */
 	@Override
 	public String toString() {
-		return "WorkerEntry [workerAddress=" + workerAddress + ", lastContactTimestamp=" + lastContactTimestamp + "]";
+		return "WorkerEntry [workerId=" + workerId + ", workerAddress=" + workerAddress + ", lastContactTimestamp="
+				+ lastContactTimestamp + ", dataPort=" + dataPort + ", qourumEstablished=" + qourumEstablished + "]";
 	}
 
 }

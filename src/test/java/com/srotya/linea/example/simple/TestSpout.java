@@ -13,26 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.linea.example;
+package com.srotya.linea.example.simple;
 
+import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.srotya.linea.Event;
+import com.srotya.linea.Collector;
+import com.srotya.linea.TestSimpleTopology;
 import com.srotya.linea.processors.Spout;
-import com.srotya.linea.tolerance.Collector;
-import com.srotya.linea.utils.Constants;
 
 /**
  * @author ambud
  */
-public class TestSpout extends Spout {
+public class TestSpout extends Spout<Event> {
 
 	private static final long serialVersionUID = 1L;
-	private transient Collector collector;
+	private transient Collector<Event> collector;
 	private transient Set<Long> emittedEvents;
 	private transient int taskId;
 	private transient AtomicBoolean processed;
@@ -44,7 +44,7 @@ public class TestSpout extends Spout {
 	}
 
 	@Override
-	public void configure(Map<String, String> conf, int taskId, Collector collector) {
+	public void configure(Map<String, String> conf, int taskId, Collector<Event> collector) {
 		this.taskId = taskId;
 		this.processed = new AtomicBoolean(false);
 		this.collector = collector;
@@ -52,7 +52,7 @@ public class TestSpout extends Spout {
 	}
 
 	@Override
-	public String getBoltName() {
+	public String getSpoutName() {
 		return "testSpout";
 	}
 
@@ -61,10 +61,12 @@ public class TestSpout extends Spout {
 		System.out.println("Running spout:" + taskId);
 		long timestamp = System.currentTimeMillis();
 		for (int i = 0; i < messageCount; i++) {
-			Event event = collector.getFactory().buildEvent(taskId + "_" + i);
-			event.getHeaders().put("uuid", taskId + "host" + i);
-			event.getHeaders().put(Constants.FIELD_GROUPBY_ROUTING_KEY, "host"+i);
-			emittedEvents.add(event.getEventId());
+			if (Thread.currentThread().isInterrupted()) {
+				break;
+			}
+			Event event = (Event) collector.getFactory().buildTuple(taskId + "_" + i);
+			event.setGroupByKey("host" + i);
+			emittedEvents.add(event.getTupleId());
 			collector.spoutEmit("printerBolt", event);
 			if (i % 100000 == 0) {
 				System.err.println("Produced " + i + " events:" + taskId);
@@ -72,18 +74,20 @@ public class TestSpout extends Spout {
 		}
 		processed.set(true);
 		timestamp = System.currentTimeMillis() - timestamp;
-		System.out.println("Emitted all events in:" + timestamp + "ms");
+		System.out.println("Emitted all events in:" + timestamp / 1000 + " seconds");
 		timestamp = System.currentTimeMillis();
 		while (true) {
 			if (emittedEvents.size() == 0) {
-				System.out.println("Completed processing " + messageCount + " events" + "\ttaskid:" + taskId);
+				NumberFormat formatter = NumberFormat.getInstance();
+				System.out.println(
+						"Completed processing " + formatter.format(messageCount) + " events" + "\ttaskid:" + taskId);
 				timestamp = System.currentTimeMillis() - timestamp;
-				System.out.println("Add additional:" + timestamp + "ms for buffer to be processed");
+				System.out.println("Add additional:" + timestamp / 1000 + " seconds for buffer to be processed");
+				TestSimpleTopology.processed.set(true);
 				try {
 					Thread.sleep(5000);
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					break;
 				}
 			} else {
 				System.out.println(c + "\tDropped data:" + emittedEvents.size() + "\ttaskid:" + taskId);

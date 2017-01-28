@@ -21,10 +21,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
-import com.srotya.linea.Event;
+import com.srotya.linea.Collector;
+import com.srotya.linea.Tuple;
 import com.srotya.linea.disruptor.ROUTING_TYPE;
 import com.srotya.linea.processors.Bolt;
-import com.srotya.linea.utils.Constants;
 
 /**
  * Inspired by the XOR Ledger concept of Apache Storm by Nathan Marz. <br>
@@ -35,9 +35,8 @@ import com.srotya.linea.utils.Constants;
  * 
  * @author ambud
  */
-public class AckerBolt implements Bolt {
+public class AckerBolt<E extends Tuple> implements Bolt<E> {
 
-	private static final Logger logger = Logger.getLogger(AckerBolt.class.getName());
 	private static final int PRINT_COUNT = 100000;
 	private static final long serialVersionUID = 1L;
 	public static final String ACKER_BOLT_NAME = "_acker";
@@ -45,17 +44,19 @@ public class AckerBolt implements Bolt {
 	private static final int ACKER_MAP_SIZE = 1000000;
 	private transient RotatingMap<Long, AckerEntry> ackerMap;
 	private transient int taskId;
-	private transient Collector collector;
+	private transient Collector<E> collector;
 	private transient int c;
+	private transient Logger logger;
 
 	public AckerBolt() {
 	}
 
 	@Override
-	public void configure(Map<String, String> conf, int taskId, Collector collector) {
+	public void configure(Map<String, String> conf, int taskId, Collector<E> collector) {
 		this.taskId = taskId;
 		this.collector = collector;
-		ackerMap = new RotatingMap<>(3);
+		this.logger = Logger.getLogger(AckerBolt.class.getName());
+		this.ackerMap = new RotatingMap<>(3);
 	}
 
 	@Override
@@ -69,16 +70,16 @@ public class AckerBolt implements Bolt {
 	}
 
 	@Override
-	public void process(Event event) {
+	public void process(E event) {
 		boolean isBroadcast = false;
 		if (isBroadcast) {
 			// tick event
 			expireEvents();
 		} else {
-			Object sourceId = event.getHeaders().get(Constants.FIELD_GROUPBY_ROUTING_KEY);
-			String source = (String) event.getHeaders().get(Constants.FIELD_COMPONENT_NAME);
-			updateAckerMap(source, event.getHeaders().get(Constants.FIELD_TASK_ID), (Long) sourceId,
-					(Long) event.getHeaders().get(Constants.FIELD_AGGREGATION_VALUE));
+			Object sourceId = event.getGroupByKey();
+			String source = event.getComponentName();
+			// logger.info("Sourceid:"+sourceId+"\t"+source);
+			updateAckerMap(source, event.getTaskId(), (Long) sourceId, (Long) event.getGroupByValue());
 		}
 	}
 
@@ -92,11 +93,10 @@ public class AckerBolt implements Bolt {
 				// exception; entry was asynchronously acked
 			} else {
 				// notify source
-				Event event = collector.getFactory().buildEvent();
-				event.setOriginEventId(entry.getKey());
-				event.getHeaders().put(Constants.FIELD_GROUPBY_ROUTING_KEY, entry.getKey());
-				event.getHeaders().put(Constants.FIELD_EVENT_TYPE, true);
-				event.getHeaders().put("sourceSpout", entry.getValue().getSourceSpout());
+				E event = collector.getFactory().buildTuple();
+				event.setOriginTupleId(entry.getKey());
+				event.setGroupByKey(entry.getKey());
+				event.setAck(true);
 				collector.emitDirect(entry.getValue().getSourceSpout(), entry.getValue().getSourceTaskId(), event);
 			}
 		}
@@ -129,7 +129,7 @@ public class AckerBolt implements Bolt {
 				// means event processing tree is complete
 				c++;
 				if (c % PRINT_COUNT == 0) {
-					logger.info("Acked " + PRINT_COUNT + ":" + taskId);
+					logger.fine("Acked " + PRINT_COUNT + ":" + taskId + "\t" + sourceId);
 				}
 				logger.fine("Acking event:" + sourceId + "\t" + trackerValue.getSourceSpout());
 
@@ -137,11 +137,10 @@ public class AckerBolt implements Bolt {
 				ackerMap.remove(sourceId);
 
 				// notify source that event's completely processed
-				Event event = collector.getFactory().buildEvent();
-				event.setOriginEventId(sourceId);
-				event.getHeaders().put(Constants.FIELD_GROUPBY_ROUTING_KEY, sourceId);
-				event.getHeaders().put(Constants.FIELD_EVENT_TYPE, true);
-				event.getHeaders().put("sourceSpout", trackerValue.getSourceSpout());
+				E event = collector.getFactory().buildTuple();
+				event.setOriginTupleId(sourceId);
+				event.setGroupByKey(sourceId);
+				event.setAck(true);
 				collector.emitDirect(trackerValue.getSourceSpout(), trackerValue.getSourceTaskId(), event);
 			}
 		}
@@ -202,10 +201,21 @@ public class AckerBolt implements Bolt {
 			return buckets.toString();
 		}
 
+		public int size() {
+			return buckets.size();
+		}
+
 	}
 
 	@Override
 	public void ready() {
+	}
+
+	/**
+	 * @return ackerMap
+	 */
+	protected RotatingMap<Long, AckerEntry> getAckerMap() {
+		return ackerMap;
 	}
 
 }

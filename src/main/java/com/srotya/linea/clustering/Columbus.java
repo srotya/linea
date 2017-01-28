@@ -39,14 +39,14 @@ import com.srotya.linea.Topology;
  */
 public class Columbus implements Runnable {
 
-	private static final String KEEPER_CLASS_FQCN = "linea.keeper.class";
-	private static final String DEFAULT_KEEPER_CLASS = "com.srotya.linea.clustering.columbus.ZookeeperClusterKeeper";
+	public static final String KEEPER_CLASS_FQCN = "linea.keeper.class";
+	private static final String DEFAULT_KEEPER_CLASS = "com.srotya.linea.clustering.columbus.ZookeeperClusterKeeper"; 
 	private static final Logger logger = Logger.getLogger(Columbus.class.getName());
 	private AtomicInteger workerCount = new AtomicInteger(0);
 	private Map<Integer, WorkerEntry> workerMap;
 	private InetAddress address;
 	private int dataPort;
-	private int selfWorkerId;
+	private volatile int selfWorkerId;
 	private ClusterKeeper keeper;
 	private File idCacheFile;
 
@@ -62,7 +62,7 @@ public class Columbus implements Runnable {
 		this.workerMap = new ConcurrentHashMap<>();
 
 		this.selfWorkerId = Integer.parseInt(conf.getOrDefault(Topology.WORKER_ID, "-1"));
-		this.idCacheFile = new File(".idCache");
+		this.idCacheFile = new File("./target/.idCache");
 		// check cache, uses the same logic as
 		// https://issues.apache.org/jira/browse/KAFKA-1070
 		if (selfWorkerId < 0) {
@@ -77,7 +77,7 @@ public class Columbus implements Runnable {
 		String keeperClass = conf.getOrDefault(KEEPER_CLASS_FQCN, DEFAULT_KEEPER_CLASS);
 		try {
 			keeper = (ClusterKeeper) Class.forName(keeperClass).newInstance();
-			keeper.init(conf);
+			keeper.init(conf, address);
 		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
 			logger.log(Level.SEVERE, "Invalid Keeper class", e);
 		} catch (Exception e) {
@@ -139,9 +139,11 @@ public class Columbus implements Runnable {
 			try {
 				// poll workers and
 				Map<Integer, WorkerEntry> entries = keeper.pollWorkers();
-				for (Entry<Integer, WorkerEntry> entry : entries.entrySet()) {
-					logger.fine("Discovered worker:" + entry.getValue() + " with id:" + entry.getKey());
-					addKnownPeer(entry.getKey(), entry.getValue());
+				if (entries != null) {
+					for (Entry<Integer, WorkerEntry> entry : entries.entrySet()) {
+						logger.fine("Discovered worker:" + entry.getValue() + " with id:" + entry.getKey());
+						addKnownPeer(entry.getKey(), entry.getValue());
+					}
 				}
 			} catch (Exception e) {
 				logger.log(Level.SEVERE, "Exception polling worker information", e);

@@ -17,24 +17,33 @@ package com.srotya.linea.disruptor;
 
 import com.lmax.disruptor.EventTranslatorOneArg;
 import com.lmax.disruptor.RingBuffer;
-import com.srotya.linea.Event;
+import com.srotya.linea.Tuple;
 
 /**
  * Translator used by Disruptor to copy events into a {@link RingBuffer}
  * 
  * @author ambud
  */
-public class CopyTranslator implements EventTranslatorOneArg<Event, Event> {
-
+public abstract class CopyTranslator<E extends Tuple> implements EventTranslatorOneArg<E, E> {
+	
 	@Override
-	public void translateTo(Event outputEvent, long sequence, Event inputEvent) {
-		outputEvent.getHeaders().clear();
-		outputEvent.getSourceIds().clear();
-		outputEvent.getSourceIds().addAll(inputEvent.getSourceIds());
-		outputEvent.setEventId(inputEvent.getEventId());
-		outputEvent.setSourceWorkerId(inputEvent.getSourceWorkerId());
-		outputEvent.setOriginEventId(inputEvent.getOriginEventId());
-		outputEvent.getHeaders().putAll(inputEvent.getHeaders());
+	public void translateTo(E outputTuple, long sequence, E inputTuple) {
+		outputTuple.getSourceIds().clear();
+		outputTuple.getSourceIds().addAll(inputTuple.getSourceIds());
+		outputTuple.setEventId(inputTuple.getTupleId());
+		outputTuple.setSourceWorkerId(inputTuple.getSourceWorkerId());
+		outputTuple.setOriginTupleId(inputTuple.getOriginTupleId());
+		outputTuple.setGroupByKey(inputTuple.getGroupByKey());
+		outputTuple.setGroupByValue(inputTuple.getGroupByValue());
+		outputTuple.setNextBoltId(inputTuple.getNextBoltId());
+		outputTuple.setDestinationTaskId(inputTuple.getDestinationTaskId());
+		outputTuple.setTaskId(inputTuple.getTaskId());
+		outputTuple.setDestinationWorkerId(inputTuple.getDestinationWorkerId());
+		outputTuple.setComponentName(inputTuple.getComponentName());
+		outputTuple.setAck(inputTuple.isAck());
+		translate(outputTuple, sequence, inputTuple);
 	}
+
+	protected abstract void translate(E outputEvent, long sequence, E inputEvent);
 
 }

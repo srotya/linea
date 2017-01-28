@@ -16,6 +16,7 @@
 package com.srotya.linea.clustering.columbus;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +58,7 @@ public class ZookeeperClusterKeeper implements ClusterKeeper, Watcher {
 	private String zkConnectionString;
 
 	@Override
-	public void init(Map<String, String> conf) throws Exception {
+	public void init(Map<String, String> conf, InetAddress selfAddress) throws Exception {
 		zkRoot = conf.getOrDefault(LINEA_ZK_ROOT, DEFAULT_ZK_ROOT);
 		zkConnectionString = conf.getOrDefault(LINEA_ZK_CONNECTION_STRING, DEFAULT_ZK_CONNECTION_STRNG);
 		try {
@@ -83,7 +84,7 @@ public class ZookeeperClusterKeeper implements ClusterKeeper, Watcher {
 	public Map<Integer, WorkerEntry> pollWorkers() throws Exception {
 		Map<Integer, WorkerEntry> entries = new HashMap<>();
 		Gson gson = new Gson();
-		List<String> children = zk.getChildren(zkRoot, true);
+		List<String> children = zk.getChildren(zkRoot, false);
 		for (String child : children) {
 			child = zkRoot + "/" + child;
 			Stat stat = zk.exists(child, true);

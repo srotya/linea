@@ -15,47 +15,10 @@
  */
 package com.srotya.linea;
 
-import java.io.Serializable;
-
 /**
- * Mutable short for hash value edits
- * 
  * @author ambud
  */
-public class MutableShort implements Serializable {
-
-	private static final long serialVersionUID = 1L;
+public class TestTopology {
 	
-	private short val;
-	
-	public MutableShort() {
-	}
-	
-	public MutableShort(short val) {
-		this.val = val;
-	}
-	
-	public short incrementAndGet() {
-		return ++val;
-	}
-
-	/**
-	 * @return the val
-	 */
-	public short getVal() {
-		return val;
-	}
-
-	/**
-	 * @param val the val to set
-	 */
-	public void setVal(short val) {
-		this.val = val;
-	}
-	
-	@Override
-	public String toString() {
-		return String.valueOf(val);
-	}
 	
 }

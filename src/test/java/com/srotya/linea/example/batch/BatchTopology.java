@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.linea.example;
+package com.srotya.linea.example.batch;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,19 +24,20 @@ import com.srotya.linea.Topology;
  * Simple test topology to validate how Linea will launch and run pipelines and
  * acking.
  * 
- * Fixed bugs with copy translator causing issues in acking.
- * 
  * @author ambud
  */
-public class SimpleTopology {
+public class BatchTopology {
 
 	public static void main(String[] args) throws Exception {
 		Map<String, String> conf = new HashMap<>();
 		conf.put(Topology.WORKER_ID, args[0]);
 		conf.put(Topology.WORKER_COUNT, args[1]);
 		conf.put(Topology.WORKER_DATA_PORT, args[2]);
-		conf.put(Topology.ACKER_PARALLELISM, "1");
-		Topology builder = new Topology(conf);
-		builder = builder.addSpout(new TestSpout(10000000), 1).addBolt(new PrinterBolt(), 1).start();
+		int parallelism = 1;
+		conf.put(Topology.ACKER_PARALLELISM, String.valueOf(parallelism * 2));
+		Topology<BatchEvent> builder = new Topology<BatchEvent>(conf, new EventFactory(), new EventTranslator(),
+				BatchEvent.class);
+		builder = builder.addSpout(new TestBatchSpout(1_000_000_000L), parallelism * 2)
+				.addBolt(new TransformBolt(), parallelism).addBolt(new PrinterBolt(), parallelism).start();
 	}
 }

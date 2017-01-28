@@ -16,10 +16,8 @@
 package com.srotya.linea.processors;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -33,30 +31,31 @@ import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
-import com.srotya.linea.Event;
+import com.srotya.linea.Collector;
+import com.srotya.linea.Tuple;
+import com.srotya.linea.TupleFactory;
 import com.srotya.linea.clustering.Columbus;
 import com.srotya.linea.disruptor.CopyTranslator;
 import com.srotya.linea.network.Router;
-import com.srotya.linea.tolerance.Collector;
 
 /**
  * {@link Bolt} Executor is wrapper that instantiates and executes bolt code.
  * 
  * @author ambud
  */
-public class BoltExecutor {
+public class BoltExecutor<E extends Tuple> {
 
 	private static final Logger logger = Logger.getLogger(BoltExecutor.class.getName());
 	private ExecutorService es;
-	private Bolt templateBoltInstance;
-	private Map<Integer, BoltExecutorWrapper> taskProcessorMap;
-	private CopyTranslator copyTranslator;
+	private Bolt<E> templateBoltInstance;
+	private Map<Integer, BoltExecutorWrapper<E>> taskProcessorMap;
+	private CopyTranslator<E> copyTranslator;
 	private int parallelism;
 	private Columbus columbus;
-	private DisruptorUnifiedFactory factory;
 	private byte[] serializedBoltInstance;
 	private Map<String, String> conf;
-	private Router router;
+	private Router<E> router;
+	private TupleFactory<E> factory;
 
 	/**
 	 * @param conf
@@ -68,8 +67,9 @@ public class BoltExecutor {
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 */
-	public BoltExecutor(Map<String, String> conf, DisruptorUnifiedFactory factory, byte[] serializedBoltInstance,
-			Columbus columbus, int parallelism, Router router) throws IOException, ClassNotFoundException {
+	public BoltExecutor(Map<String, String> conf, TupleFactory<E> factory, byte[] serializedBoltInstance,
+			Columbus columbus, int parallelism, Router<E> router, CopyTranslator<E> copyTranslator)
+			throws IOException, ClassNotFoundException {
 		this.conf = conf;
 		this.factory = factory;
 		this.serializedBoltInstance = serializedBoltInstance;
@@ -79,8 +79,12 @@ public class BoltExecutor {
 		this.taskProcessorMap = new HashMap<>();
 
 		this.templateBoltInstance = deserializeBoltInstance(serializedBoltInstance);
-		this.es = Executors.newFixedThreadPool(parallelism * 2);
-		this.copyTranslator = new CopyTranslator();
+		if (templateBoltInstance instanceof Spout) {
+			this.es = Executors.newFixedThreadPool(parallelism * 2);
+		} else {
+			this.es = Executors.newFixedThreadPool(parallelism);
+		}
+		this.copyTranslator = copyTranslator;
 	}
 
 	/**
@@ -100,15 +104,16 @@ public class BoltExecutor {
 		try {
 			for (int i = 0; i < parallelism; i++) {
 				int taskId = columbus.getSelfWorkerId() * parallelism + i;
-				Bolt object = deserializeBoltInstance(serializedBoltInstance);
-				object.configure(conf, taskId, new Collector(factory, router, object.getBoltName(), taskId));
-				taskProcessorMap.put(taskId, new BoltExecutorWrapper(factory, es, object));
+				Bolt<E> object = deserializeBoltInstance(serializedBoltInstance);
+				object.configure(conf, taskId,
+						new Collector<E>(factory, router, object.getBoltName(), taskId, parallelism));
+				taskProcessorMap.put(taskId, new BoltExecutorWrapper<E>(factory, es, object));
 			}
-			for (Entry<Integer, BoltExecutorWrapper> entry : taskProcessorMap.entrySet()) {
+			for (Entry<Integer, BoltExecutorWrapper<E>> entry : taskProcessorMap.entrySet()) {
 				entry.getValue().start();
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -118,7 +123,7 @@ public class BoltExecutor {
 	 * @throws InterruptedException
 	 */
 	public void stop() throws InterruptedException {
-		for (Entry<Integer, BoltExecutorWrapper> entry : taskProcessorMap.entrySet()) {
+		for (Entry<Integer, BoltExecutorWrapper<E>> entry : taskProcessorMap.entrySet()) {
 			entry.getValue().stop();
 		}
 		es.shutdownNow();
@@ -133,48 +138,34 @@ public class BoltExecutor {
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 */
-	public static Bolt deserializeBoltInstance(byte[] processorObject) throws IOException, ClassNotFoundException {
+	public Bolt<E> deserializeBoltInstance(byte[] processorObject) throws IOException, ClassNotFoundException {
 		ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(processorObject));
-		Bolt processor = (Bolt) ois.readObject();
+		@SuppressWarnings("unchecked")
+		Bolt<E> processor = (Bolt<E>) ois.readObject();
 		ois.close();
 		return processor;
-	}
-
-	/**
-	 * Serialize {@link Bolt} instance to byte array
-	 * 
-	 * @param boltInstance
-	 * @return byte array
-	 * @throws IOException
-	 */
-	public static byte[] serializeBoltInstance(Bolt boltInstance) throws IOException {
-		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		ObjectOutputStream ois = new ObjectOutputStream(stream);
-		ois.writeObject(boltInstance);
-		ois.close();
-		return stream.toByteArray();
 	}
 
 	/**
 	 * Method called by Router
 	 * 
 	 * @param taskId
-	 * @param event
+	 * @param tuple
 	 */
-	public void process(int taskId, Event event) {
-		BoltExecutorWrapper wrapper = taskProcessorMap.get(taskId);
+	public void process(int taskId, E tuple) {
+		BoltExecutorWrapper<E> wrapper = taskProcessorMap.get(taskId);
 		if (wrapper != null) {
-			wrapper.getBuffer().publishEvent(copyTranslator, event);
+			wrapper.getBuffer().publishEvent(copyTranslator, tuple);
 		} else {
 			logger.severe("Executor not found for:" + taskId + "\t" + columbus.getSelfWorkerId() + "\t"
-					+ taskProcessorMap + "\t" + event);
+					+ taskProcessorMap + "\t" + tuple);
 		}
 	}
 
 	/**
 	 * @return templatedBoltInstance
 	 */
-	public Bolt getTemplateBoltInstance() {
+	public Bolt<E> getTemplateBoltInstance() {
 		return templateBoltInstance;
 	}
 
@@ -186,19 +177,33 @@ public class BoltExecutor {
 	}
 
 	/**
+	 * @return the taskProcessorMap
+	 */
+	protected Map<Integer, BoltExecutorWrapper<E>> getTaskProcessorMap() {
+		return taskProcessorMap;
+	}
+
+	/**
+	 * @return the es
+	 */
+	protected ExecutorService getEs() {
+		return es;
+	}
+
+	/**
 	 * Bolt Executor Wrapper
 	 * 
 	 * @author ambud
 	 */
-	public static class BoltExecutorWrapper implements EventHandler<Event> {
+	public static class BoltExecutorWrapper<E extends Tuple> implements EventHandler<E> {
 
-		private Bolt bolt;
-		private Disruptor<Event> disruptor;
-		private RingBuffer<Event> buffer;
+		private Bolt<E> bolt;
+		private Disruptor<E> disruptor;
+		private RingBuffer<E> buffer;
 		private ExecutorService pool;
 
 		@SuppressWarnings("unchecked")
-		public BoltExecutorWrapper(DisruptorUnifiedFactory factory, ExecutorService pool, Bolt processor) {
+		public BoltExecutorWrapper(TupleFactory<E> factory, ExecutorService pool, Bolt<E> processor) {
 			this.pool = pool;
 			this.bolt = processor;
 			disruptor = new Disruptor<>(factory, 1024 * 8, pool, ProducerType.MULTI, new YieldingWaitStrategy());
@@ -229,21 +234,21 @@ public class BoltExecutor {
 		}
 
 		@Override
-		public void onEvent(Event event, long arg1, boolean arg2) throws Exception {
+		public void onEvent(E event, long arg1, boolean arg2) throws Exception {
 			bolt.process(event);
 		}
 
 		/**
 		 * @return buffer
 		 */
-		public RingBuffer<Event> getBuffer() {
+		public RingBuffer<E> getBuffer() {
 			return buffer;
 		}
 
 		/**
 		 * @return processor
 		 */
-		public Bolt getBolt() {
+		public Bolt<E> getBolt() {
 			return bolt;
 		}
 

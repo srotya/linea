@@ -13,24 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.linea.processors;
-
-
-import com.lmax.disruptor.EventFactory;
-import com.srotya.linea.Event;
-import com.srotya.linea.UnifiedFactory;
+package com.srotya.linea;
 
 /**
- * Unified factory implementation for Tau
+ * Test {@link Tuple} to be used in unit tests
  * 
- * @author ambudsharma
+ * @author ambud
  */
-public class DisruptorUnifiedFactory extends UnifiedFactory implements EventFactory<Event> {
+public class TestTuple extends AbstractTuple {
 
-	@Override
-	public Event newInstance() {
-		return buildEvent();
+	public static final int AVG_EVENT_FIELD_COUNT = Integer.parseInt(System.getProperty("event.field.count", "40"));
+	private String field;
+
+	public TestTuple(String eventId) {
+		super(eventId);
+	}
+	
+	public TestTuple() {
+		super();
 	}
 
+	/**
+	 * @return the field
+	 */
+	public String getField() {
+		return field;
+	}
+
+	/**
+	 * @param field the field to set
+	 */
+	public void setField(String field) {
+		this.field = field;
+	}
 
 }

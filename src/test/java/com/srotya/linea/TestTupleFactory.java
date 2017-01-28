@@ -16,23 +16,26 @@
 package com.srotya.linea;
 
 /**
- * Factory blueprint to build events
+ * Test {@link TupleFactory} to be used in unit tests
  * 
- * @author ambud_sharma
+ * @author ambud
  */
-public interface EventFactory {
-	
-	/**
-	 * Build Event object
-	 * @return event
-	 */
-	public Event buildEvent();
-	
-	/**
-	 * Build and return event object with supplied eventId
-	 * @param eventId
-	 * @return
-	 */
-	public Event buildEvent(String eventId);
+public class TestTupleFactory implements TupleFactory<TestTuple> {
+
+
+	@Override
+	public TestTuple newInstance() {
+		return new TestTuple();
+	}
+
+	@Override
+	public TestTuple buildTuple() {
+		return new TestTuple();
+	}
+
+	@Override
+	public TestTuple buildTuple(String tupleId) {
+		return new TestTuple(tupleId);
+	}
 	
 }

@@ -15,47 +15,26 @@
  */
 package com.srotya.linea;
 
-import java.io.Serializable;
+import com.lmax.disruptor.EventFactory;
 
 /**
- * Mutable boolean for hash value edits
+ * Factory blueprint to build {@link Tuple}s
  * 
  * @author ambud
  */
-public class MutableInt implements Serializable {
-
-	private static final long serialVersionUID = 1L;
+public interface TupleFactory<E extends Tuple> extends EventFactory<E>{
 	
-	private int val;
-	
-	public MutableInt() {
-	}
-	
-	public MutableInt(int val) {
-		this.val = val;
-	}
-	
-	public int incrementAndGet() {
-		return ++val;
-	}
-
 	/**
-	 * @return the val
+	 * Build Event object
+	 * @return event
 	 */
-	public int getVal() {
-		return val;
-	}
-
-	/**
-	 * @param val the val to set
-	 */
-	public void setVal(int val) {
-		this.val = val;
-	}
+	public E buildTuple();
 	
-	@Override
-	public String toString() {
-		return String.valueOf(val);
-	}
+	/**
+	 * Build and return event object with supplied eventId
+	 * @param eventId
+	 * @return
+	 */
+	public E buildTuple(String eventId);
 	
 }

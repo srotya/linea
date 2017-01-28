@@ -25,16 +25,17 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import com.lmax.disruptor.EventHandler;
-import com.srotya.linea.Event;
+import com.srotya.linea.Tuple;
 import com.srotya.linea.clustering.Columbus;
 import com.srotya.linea.clustering.WorkerEntry;
 import com.srotya.linea.network.KryoObjectEncoder;
-import com.srotya.linea.utils.Constants;
 
 /**
+ * Inter Worker Communication (IWC) client, implemented as a Disruptor handler.
+ * 
  * @author ambud
  */
-public class TCPClient implements EventHandler<Event> {
+public class TCPClient<E extends Tuple> implements EventHandler<E> {
 
 	private static final Logger logger = Logger.getLogger(TCPClient.class.getName());
 	private Map<Integer, OutputStream> socketMap;
@@ -88,8 +89,8 @@ public class TCPClient implements EventHandler<Event> {
 	}
 
 	@Override
-	public void onEvent(Event event, long sequence, boolean endOfBatch) throws Exception {
-		Integer workerId = (Integer) event.getHeaders().get(Constants.FIELD_DESTINATION_WORKER_ID);
+	public void onEvent(E event, long sequence, boolean endOfBatch) throws Exception {
+		int workerId = event.getDestinationWorkerId();
 		try {
 			if (workerId % clientThreads == clientThreadId) {
 				OutputStream stream = socketMap.get(workerId);
@@ -101,7 +102,7 @@ public class TCPClient implements EventHandler<Event> {
 			}
 		} catch (IOException e) {
 			WorkerEntry entry = columbus.getWorkerMap().get(workerId);
-			logger.severe("Lost worker connection to WorkerId:"+workerId+"\tAddress:"+entry.getWorkerAddress());
+			logger.severe("Lost worker connection to WorkerId:" + workerId + "\tAddress:" + entry.getWorkerAddress());
 			retryConnectLoop(workerId, entry);
 			if (workerId % clientThreads == clientThreadId) {
 				OutputStream stream = socketMap.get(workerId);

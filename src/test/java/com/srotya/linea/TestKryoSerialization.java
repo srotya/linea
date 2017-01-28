@@ -21,10 +21,14 @@ import java.io.ByteArrayInputStream;
 
 import org.junit.Test;
 
-import com.srotya.linea.Event;
+import com.srotya.linea.Tuple;
+import com.srotya.linea.example.simple.Event;
 import com.srotya.linea.network.KryoObjectDecoder;
 import com.srotya.linea.network.KryoObjectEncoder;
 
+/**
+ * @author ambud
+ */
 public class TestKryoSerialization {
 
 	@Test
@@ -34,7 +38,6 @@ public class TestKryoSerialization {
 		event.getHeaders().put("message",
 				"ix-dc9-19.ix.netcom.com - - [04/Sep/1995:00:00:28 -0400] \"GET /html/cgi.html HTTP/1.0\" 200 2217\r\n");
 		event.getHeaders().put("value", 10);
-		event.setEventId(13123134234L);
 		byte[] ary = KryoObjectEncoder.eventToByteArray(event);
 		System.out.println("Without Compression Array Length:" + ary.length);
 		ary = KryoObjectEncoder.eventToByteArray(event);
@@ -48,13 +51,12 @@ public class TestKryoSerialization {
 		e1.getHeaders().put("message",
 				"ix-dc9-19.ix.netcom.com - - [04/Sep/1995:00:00:28 -0400] \"GET /html/cgi.html HTTP/1.0\" 200 2217\r\n");
 		e1.getHeaders().put("value", 10);
-		e1.setEventId(13123134234L);
 		byte[] ary = KryoObjectEncoder.eventToByteArray(e1);
 
 		ByteArrayInputStream stream = new ByteArrayInputStream(ary);
-		Event e2 = KryoObjectDecoder.streamToEvent(stream);
+		Tuple e2 = KryoObjectDecoder.streamToEvent(Event.class, stream);
 
-		assertEquals(e1.getEventId(), e2.getEventId());
+		assertEquals(e1.getTupleId(), e2.getTupleId());
 	}
 
 }

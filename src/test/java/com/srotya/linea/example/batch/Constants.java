@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.linea.utils;
+package com.srotya.linea.example.batch;
 
 /**
  * Refactored set of global constants
@@ -27,7 +27,7 @@ public class Constants {
 	public static final String FIELD_EVENT_ID = "_i";
 	public static final String FIELD_COMPONENT_NAME = "_cn";
 	public static final String FIELD_GROUPBY_ROUTING_KEY = "_g";
-	public static final String FIELD_AGGREGATION_VALUE = "_v";
+	public static final String FIELD_GROUP_BY_VALUE = "_v";
 	public static final String FIELD_EVENT_TYPE = "_y";
 	public static final String FIELD_DESTINATION_TASK_ID = "_dtid";
 	public static final String FIELD_DESTINATION_WORKER_ID = "_dwid";
@@ -35,7 +35,7 @@ public class Constants {
 	public static final String FALSE = "false";
 	public static final String TRUE = "true";
 	
-	public static final String FIELD_NEXT_BOLT = "_np";
+	public static final String FIELD_NEXT_BOLT_ID = "_np";
 	public static final String FIELD_TASK_ID = "_tid";
 	
 }

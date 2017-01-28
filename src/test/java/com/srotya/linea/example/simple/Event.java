@@ -13,34 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.linea;
+package com.srotya.linea.example.simple;
 
+import java.util.HashMap;
 import java.util.Map;
 
+import com.srotya.linea.AbstractTuple;
+
 /**
- * Unified factory implementation for Linea
- * 
  * @author ambud
  */
-public class UnifiedFactory implements EventFactory {
-	
-	@Override
-	public Event buildEvent() {
-		return new Event();
+public class Event extends AbstractTuple {
+
+	public static final int AVG_EVENT_FIELD_COUNT = Integer.parseInt(System.getProperty("event.field.count", "40"));
+	private Map<String, Object> headers;
+
+	public Event(String eventId) {
+		super(eventId);
+		headers = new HashMap<>(AVG_EVENT_FIELD_COUNT);
 	}
-	
-	@Override
-	public Event buildEvent(String eventId) {
-		return new Event(eventId);
+
+	public Event() {
+		headers = new HashMap<>(AVG_EVENT_FIELD_COUNT);
 	}
-	
+
 	/**
-	 * Build Event with existing headers
-	 * @param headers
-	 * @return event
+	 * @return
 	 */
-	public Event buildEvent(Map<String, Object> headers) {
-		return new Event(headers);
+	public Map<String, Object> getHeaders() {
+		return headers;
 	}
-	
+
+	/**
+	 * @param headers
+	 */
+	public void setHeaders(Map<String, Object> headers) {
+		this.headers = headers;
+	}
+
 }

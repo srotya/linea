@@ -13,25 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.linea.example;
+package com.srotya.linea.example.simple;
 
 import java.util.Map;
 
-import com.srotya.linea.Event;
+import com.srotya.linea.Collector;
 import com.srotya.linea.disruptor.ROUTING_TYPE;
 import com.srotya.linea.processors.Bolt;
-import com.srotya.linea.tolerance.Collector;
 
 /**
  * @author ambud
  */
-public class TransformBolt implements Bolt {
+public class TransformBolt implements Bolt<Event> {
 
 	private static final long serialVersionUID = 1L;
-	private transient Collector collector;
+	private transient Collector<Event> collector;
 
 	@Override
-	public void configure(Map<String, String> conf, int instanceId, Collector collector) {
+	public void configure(Map<String, String> conf, int instanceId, Collector<Event> collector) {
 		this.collector = collector;
 	}
 
@@ -41,9 +40,9 @@ public class TransformBolt implements Bolt {
 
 	@Override
 	public void process(Event event) {
-		Map<String, Object> headers = event.getHeaders();
-		headers.put("fieldtransform", 2231);
-		collector.emit("printerBolt", headers, event);
+		Event buildEvent = collector.getFactory().buildTuple();
+		buildEvent.getHeaders().put("fieldtransform", 2231);
+		collector.emit("printerBolt", buildEvent, event);
 		collector.ack(event);
 	}
 
