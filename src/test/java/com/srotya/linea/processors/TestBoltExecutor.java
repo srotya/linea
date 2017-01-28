@@ -161,7 +161,7 @@ public class TestBoltExecutor {
 		}
 
 		@Override
-		public String getBoltName() {
+		public String getSpoutName() {
 			return "testSpout";
 		}
 

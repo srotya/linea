@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.srotya.linea.Collector;
+import com.srotya.linea.TestSimpleTopology;
 import com.srotya.linea.processors.Spout;
 
 /**
@@ -51,7 +52,7 @@ public class TestSpout extends Spout<Event> {
 	}
 
 	@Override
-	public String getBoltName() {
+	public String getSpoutName() {
 		return "testSpout";
 	}
 
@@ -82,11 +83,11 @@ public class TestSpout extends Spout<Event> {
 						"Completed processing " + formatter.format(messageCount) + " events" + "\ttaskid:" + taskId);
 				timestamp = System.currentTimeMillis() - timestamp;
 				System.out.println("Add additional:" + timestamp / 1000 + " seconds for buffer to be processed");
+				TestSimpleTopology.processed.set(true);
 				try {
 					Thread.sleep(5000);
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					break;
 				}
 			} else {
 				System.out.println(c + "\tDropped data:" + emittedEvents.size() + "\ttaskid:" + taskId);

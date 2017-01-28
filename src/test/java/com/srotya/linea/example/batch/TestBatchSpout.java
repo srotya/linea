@@ -52,7 +52,7 @@ public class TestBatchSpout extends Spout<BatchEvent> {
 	}
 
 	@Override
-	public String getBoltName() {
+	public String getSpoutName() {
 		return "testSpout";
 	}
 

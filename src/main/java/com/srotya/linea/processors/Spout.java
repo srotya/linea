@@ -30,13 +30,13 @@ public abstract class Spout<E extends Tuple> implements Bolt<E> {
 
 	@Override
 	public void process(E event) {
-		Object object = event.getGroupByKey();
-		if(object!=null) {
+		Object tupleId = event.getGroupByKey();
+		if(tupleId!=null) {
 			boolean type = event.isAck();
 			if(type) {
-				ack((Long)object);
+				ack((Long)tupleId);
 			}else {
-				fail((Long)object);
+				fail((Long)tupleId);
 			}
 		}
 	}
@@ -52,6 +52,13 @@ public abstract class Spout<E extends Tuple> implements Bolt<E> {
 	 * @param eventId
 	 */
 	public abstract void fail(Long eventId);
+	
+	@Override
+	public final String getBoltName() {
+		return "Spout"+getSpoutName();
+	}
+	
+	public abstract String getSpoutName();
 	
 	@Override
 	public ROUTING_TYPE getRoutingType() {

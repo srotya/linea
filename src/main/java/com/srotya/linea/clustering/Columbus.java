@@ -39,7 +39,7 @@ import com.srotya.linea.Topology;
  */
 public class Columbus implements Runnable {
 
-	private static final String KEEPER_CLASS_FQCN = "linea.keeper.class";
+	public static final String KEEPER_CLASS_FQCN = "linea.keeper.class";
 	private static final String DEFAULT_KEEPER_CLASS = "com.srotya.linea.clustering.columbus.ZookeeperClusterKeeper"; 
 	private static final Logger logger = Logger.getLogger(Columbus.class.getName());
 	private AtomicInteger workerCount = new AtomicInteger(0);

@@ -105,13 +105,8 @@ public class BoltExecutor<E extends Tuple> {
 			for (int i = 0; i < parallelism; i++) {
 				int taskId = columbus.getSelfWorkerId() * parallelism + i;
 				Bolt<E> object = deserializeBoltInstance(serializedBoltInstance);
-				if (object instanceof Spout) {
-					object.configure(conf, taskId,
-							new Collector<E>(factory, router, "Spout" + object.getBoltName(), taskId, parallelism));
-				} else {
-					object.configure(conf, taskId,
-							new Collector<E>(factory, router, object.getBoltName(), taskId, parallelism));
-				}
+				object.configure(conf, taskId,
+						new Collector<E>(factory, router, object.getBoltName(), taskId, parallelism));
 				taskProcessorMap.put(taskId, new BoltExecutorWrapper<E>(factory, es, object));
 			}
 			for (Entry<Integer, BoltExecutorWrapper<E>> entry : taskProcessorMap.entrySet()) {
