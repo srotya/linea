@@ -61,10 +61,13 @@ public class Router<E extends Tuple> {
 	private Class<E> classOf;
 
 	/**
+	 * @param classOf
 	 * @param factory
 	 * @param columbus
 	 * @param workerCount
 	 * @param executorMap
+	 * @param conf
+	 * @param translator
 	 */
 	public Router(Class<E> classOf, EventFactory<E> factory, Columbus columbus, int workerCount,
 			Map<String, BoltExecutor<E>> executorMap, Map<String, String> conf, CopyTranslator<E> translator) {
@@ -140,7 +143,6 @@ public class Router<E extends Tuple> {
 	 * {@link ROUTING_TYPE} for the nextProcessorId to fetch the
 	 * {@link BoltExecutor} and get the taskId to route the message to.
 	 * 
-	 * @param nextBoltId
 	 * @param tuple
 	 */
 	public void routeTuple(E tuple) {
@@ -182,7 +184,6 @@ public class Router<E extends Tuple> {
 	/**
 	 * Used to either local or network route an event based on worker id.
 	 * 
-	 * @param nextBoltId
 	 * @param tuple
 	 * @param nextBolt
 	 * @param taskId
