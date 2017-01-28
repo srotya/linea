@@ -64,5 +64,10 @@ public abstract class Spout<E extends Tuple> implements Bolt<E> {
 	public ROUTING_TYPE getRoutingType() {
 		return ROUTING_TYPE.GROUPBY;
 	}
+	
+	@Override
+	public int tickTupleFrequency() {
+		return 0;
+	}
 
 }

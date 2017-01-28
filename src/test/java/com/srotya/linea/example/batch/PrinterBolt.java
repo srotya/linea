@@ -60,4 +60,9 @@ public class PrinterBolt implements Bolt<BatchEvent> {
 	public void ready() {
 	}
 
+	@Override
+	public int tickTupleFrequency() {
+		return 0;
+	}
+
 }

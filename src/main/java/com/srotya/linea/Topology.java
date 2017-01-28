@@ -63,7 +63,9 @@ public class Topology<E extends Tuple> {
 	public static final String WORKER_BIND_ADDRESS = "worker.data.bindAddress";
 	public static final String DEFAULT_BIND_ADDRESS = "localhost";
 	public static final Object CLIENT_THREAD_COUNT = "client.thread.count";
+	public static final String TICK_TUPLE = "_tick";
 	private Class<E> classOf;
+	public static final String TICK_TUPLE_FREQUENCY = "tick.tuple.frequency";
 
 	/**
 	 * Constructor with configuration properties

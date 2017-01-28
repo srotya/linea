@@ -22,6 +22,7 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import com.srotya.linea.Collector;
+import com.srotya.linea.Topology;
 import com.srotya.linea.Tuple;
 import com.srotya.linea.disruptor.ROUTING_TYPE;
 import com.srotya.linea.processors.Bolt;
@@ -47,6 +48,7 @@ public class AckerBolt<E extends Tuple> implements Bolt<E> {
 	private transient Collector<E> collector;
 	private transient int c;
 	private transient Logger logger;
+	private transient int tupleTimeout;
 
 	public AckerBolt() {
 	}
@@ -56,6 +58,8 @@ public class AckerBolt<E extends Tuple> implements Bolt<E> {
 		this.taskId = taskId;
 		this.collector = collector;
 		this.logger = Logger.getLogger(AckerBolt.class.getName());
+		this.tupleTimeout = Integer.parseInt(conf.getOrDefault(Topology.TICK_TUPLE_FREQUENCY, "90")) * 1000;
+		logger.info("Acker using tuple timeout:" + tupleTimeout/1000 + " seconds");
 		this.ackerMap = new RotatingMap<>(3);
 	}
 
@@ -71,8 +75,8 @@ public class AckerBolt<E extends Tuple> implements Bolt<E> {
 
 	@Override
 	public void process(E event) {
-		boolean isBroadcast = false;
-		if (isBroadcast) {
+		boolean tickTuple = event.getComponentName().equals(Topology.TICK_TUPLE);
+		if (tickTuple) {
 			// tick event
 			expireEvents();
 		} else {
@@ -216,6 +220,11 @@ public class AckerBolt<E extends Tuple> implements Bolt<E> {
 	 */
 	protected RotatingMap<Long, AckerEntry> getAckerMap() {
 		return ackerMap;
+	}
+
+	@Override
+	public int tickTupleFrequency() {
+		return tupleTimeout;
 	}
 
 }

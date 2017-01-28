@@ -204,6 +204,11 @@ public class TestBoltExecutor {
 			return "testBolt";
 		}
 
+		@Override
+		public int tickTupleFrequency() {
+			return 0;
+		}
+
 	}
 
 }

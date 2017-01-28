@@ -59,4 +59,9 @@ public class TransformBolt implements Bolt<BatchEvent> {
 		return "transformBolt";
 	}
 
+	@Override
+	public int tickTupleFrequency() {
+		return 0;
+	}
+
 }

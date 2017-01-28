@@ -56,4 +56,9 @@ public class TransformBolt implements Bolt<Event> {
 		return "transformBolt";
 	}
 
+	@Override
+	public int tickTupleFrequency() {
+		return 0;
+	}
+
 }

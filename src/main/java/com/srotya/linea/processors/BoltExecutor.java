@@ -32,6 +32,7 @@ import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.srotya.linea.Collector;
+import com.srotya.linea.Topology;
 import com.srotya.linea.Tuple;
 import com.srotya.linea.TupleFactory;
 import com.srotya.linea.clustering.Columbus;
@@ -77,13 +78,8 @@ public class BoltExecutor<E extends Tuple> {
 		this.parallelism = parallelism;
 		this.router = router;
 		this.taskProcessorMap = new HashMap<>();
-
 		this.templateBoltInstance = deserializeBoltInstance(serializedBoltInstance);
-		if (templateBoltInstance instanceof Spout) {
-			this.es = Executors.newFixedThreadPool(parallelism * 2);
-		} else {
-			this.es = Executors.newFixedThreadPool(parallelism);
-		}
+		this.es = Executors.newFixedThreadPool(parallelism * 2);
 		this.copyTranslator = copyTranslator;
 	}
 
@@ -107,7 +103,7 @@ public class BoltExecutor<E extends Tuple> {
 				Bolt<E> object = deserializeBoltInstance(serializedBoltInstance);
 				object.configure(conf, taskId,
 						new Collector<E>(factory, router, object.getBoltName(), taskId, parallelism));
-				taskProcessorMap.put(taskId, new BoltExecutorWrapper<E>(factory, es, object));
+				taskProcessorMap.put(taskId, new BoltExecutorWrapper<E>(factory, es, object, copyTranslator));
 			}
 			for (Entry<Integer, BoltExecutorWrapper<E>> entry : taskProcessorMap.entrySet()) {
 				entry.getValue().start();
@@ -201,9 +197,16 @@ public class BoltExecutor<E extends Tuple> {
 		private Disruptor<E> disruptor;
 		private RingBuffer<E> buffer;
 		private ExecutorService pool;
+		private TupleFactory<E> factory;
+		private volatile boolean flag;
+		private CopyTranslator<E> copyTranslator;
 
 		@SuppressWarnings("unchecked")
-		public BoltExecutorWrapper(TupleFactory<E> factory, ExecutorService pool, Bolt<E> processor) {
+		public BoltExecutorWrapper(TupleFactory<E> factory, ExecutorService pool, Bolt<E> processor,
+				CopyTranslator<E> copyTranslator) {
+			this.copyTranslator = copyTranslator;
+			this.flag = true;
+			this.factory = factory;
 			this.pool = pool;
 			this.bolt = processor;
 			disruptor = new Disruptor<>(factory, 1024 * 8, pool, ProducerType.MULTI, new YieldingWaitStrategy());
@@ -223,6 +226,13 @@ public class BoltExecutor<E extends Tuple> {
 					return;
 				}
 				bolt.ready();
+				if (bolt.tickTupleFrequency() > 0) {
+					while (flag) {
+						E tickTuple = factory.buildTuple();
+						tickTuple.setComponentName(Topology.TICK_TUPLE);
+						buffer.publishEvent(copyTranslator, tickTuple);
+					}
+				}
 			});
 		}
 
@@ -230,6 +240,7 @@ public class BoltExecutor<E extends Tuple> {
 		 * Stop {@link BoltExecutorWrapper}
 		 */
 		public void stop() {
+			flag = true;
 			disruptor.shutdown();
 		}
 
@@ -243,13 +254,6 @@ public class BoltExecutor<E extends Tuple> {
 		 */
 		public RingBuffer<E> getBuffer() {
 			return buffer;
-		}
-
-		/**
-		 * @return processor
-		 */
-		public Bolt<E> getBolt() {
-			return bolt;
 		}
 
 		/*

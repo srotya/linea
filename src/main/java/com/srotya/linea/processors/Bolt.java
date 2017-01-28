@@ -66,5 +66,12 @@ public interface Bolt<E extends Tuple> extends Serializable {
 	 * @return name of bolt
 	 */
 	public String getBoltName();
+	
+	/**
+	 * Tick tuple frequency
+	 * 
+	 * @return tick tuple frequency
+	 */
+	public int tickTupleFrequency();
 
 }

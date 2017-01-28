@@ -58,4 +58,9 @@ public class PrinterBolt implements Bolt<Event> {
 	public void ready() {
 	}
 
+	@Override
+	public int tickTupleFrequency() {
+		return 0;
+	}
+
 }
