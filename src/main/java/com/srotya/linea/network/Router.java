@@ -129,10 +129,10 @@ public class Router<E extends Tuple> {
 	 * 
 	 * @param nextBoltName
 	 * @param taskId
-	 * @param event
+	 * @param tuple
 	 */
-	public void directLocalRouteEvent(String nextBoltName, int taskId, E event) {
-		executorMap.get(nextBoltName).process(taskId, event);
+	public void directLocalRouteEvent(String nextBoltName, int taskId, E tuple) {
+		executorMap.get(nextBoltName).process(taskId, tuple);
 	}
 
 	/**
@@ -141,13 +141,13 @@ public class Router<E extends Tuple> {
 	 * {@link BoltExecutor} and get the taskId to route the message to.
 	 * 
 	 * @param nextBoltId
-	 * @param event
+	 * @param tuple
 	 */
-	public void routeEvent(String nextBoltId, E event) {
-		BoltExecutor<E> nextBolt = executorMap.get(nextBoltId);
+	public void routeTuple(E tuple) {
+		BoltExecutor<E> nextBolt = executorMap.get(tuple.getNextBoltId());
 		if (nextBolt == null) {
 			// drop this event
-			System.err.println("Next bolt null, droping event:" + event);
+			System.err.println("Next bolt null, droping event:" + tuple);
 			return;
 		}
 		int taskId = -1;
@@ -160,36 +160,36 @@ public class Router<E extends Tuple> {
 		totalParallelism = workerCount * totalParallelism;
 		switch (nextBolt.getTemplateBoltInstance().getRoutingType()) {
 		case GROUPBY:
-			Object key = event.getGroupByKey();
+			Object key = tuple.getGroupByKey();
 			if (key != null) {
 				taskId = Math.abs(MurmurHash.hash32(key.toString()) % totalParallelism);
 			} else {
-				System.err.println("Droping event, missing field group by:" + nextBoltId);
+				System.err.println("Droping event, missing field group by:" + tuple.getNextBoltId());
 				// discard event
 			}
 			break;
 		case SHUFFLE:
 			// adding local only shuffling to reduce network traffic
 			taskId = nextBolt.getParallelism() * columbus.getSelfWorkerId()
-					+ Math.abs((int) (event.getEventId() % nextBolt.getParallelism()));
+					+ Math.abs((int) (tuple.getTupleId() % nextBolt.getParallelism()));
 			break;
 		}
 
 		// check if this taskId is local to this worker
-		routeToTaskId(nextBoltId, event, nextBolt, taskId);
+		routeToTaskId(tuple, nextBolt, taskId);
 	}
 
 	/**
 	 * Used to either local or network route an event based on worker id.
 	 * 
 	 * @param nextBoltId
-	 * @param event
+	 * @param tuple
 	 * @param nextBolt
 	 * @param taskId
 	 */
-	public void routeToTaskId(String nextBoltId, E event, BoltExecutor<E> nextBolt, int taskId) {
+	public void routeToTaskId(E tuple, BoltExecutor<E> nextBolt, int taskId) {
 		if (nextBolt == null) {
-			nextBolt = executorMap.get(nextBoltId);
+			nextBolt = executorMap.get(tuple.getNextBoltId());
 		}
 		int destinationWorker = 0;
 		if (taskId >= nextBolt.getParallelism()) {
@@ -197,13 +197,12 @@ public class Router<E extends Tuple> {
 		}
 
 		if (destinationWorker == columbus.getSelfWorkerId()) {
-			nextBolt.process(taskId, event);
+			nextBolt.process(taskId, tuple);
 		} else {
 			// logger.info("Network routing");
-			event.setNextBoltId(nextBoltId);
-			event.setDestinationTaskId(taskId);
-			event.setDestinationWorkerId(destinationWorker);
-			networkTranmissionDisruptor.publishEvent(translator, event);
+			tuple.setDestinationTaskId(taskId);
+			tuple.setDestinationWorkerId(destinationWorker);
+			networkTranmissionDisruptor.publishEvent(translator, tuple);
 		}
 	}
 

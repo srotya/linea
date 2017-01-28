@@ -30,9 +30,9 @@ public abstract class CopyTranslator<E extends Tuple> implements EventTranslator
 	public void translateTo(E outputEvent, long sequence, E inputEvent) {
 		outputEvent.getSourceIds().clear();
 		outputEvent.getSourceIds().addAll(inputEvent.getSourceIds());
-		outputEvent.setEventId(inputEvent.getEventId());
+		outputEvent.setEventId(inputEvent.getTupleId());
 		outputEvent.setSourceWorkerId(inputEvent.getSourceWorkerId());
-		outputEvent.setOriginEventId(inputEvent.getOriginEventId());
+		outputEvent.setOriginTupleId(inputEvent.getOriginTupleId());
 		outputEvent.setGroupByKey(inputEvent.getGroupByKey());
 		outputEvent.setGroupByValue(inputEvent.getGroupByValue());
 		outputEvent.setNextBoltId(inputEvent.getNextBoltId());

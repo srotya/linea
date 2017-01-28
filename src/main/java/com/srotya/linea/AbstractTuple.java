@@ -142,7 +142,7 @@ public abstract class AbstractTuple implements Tuple {
 	}
 
 	@Override
-	public void setOriginEventId(long eventId) {
+	public void setOriginTupleId(long eventId) {
 		this.originEventId = eventId;
 	}
 
@@ -157,7 +157,7 @@ public abstract class AbstractTuple implements Tuple {
 	}
 
 	@Override
-	public long getEventId() {
+	public long getTupleId() {
 		return eventId;
 	}
 
@@ -167,7 +167,7 @@ public abstract class AbstractTuple implements Tuple {
 	}
 
 	@Override
-	public long getOriginEventId() {
+	public long getOriginTupleId() {
 		return originEventId;
 	}
 

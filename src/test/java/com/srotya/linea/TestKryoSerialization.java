@@ -56,7 +56,7 @@ public class TestKryoSerialization {
 		ByteArrayInputStream stream = new ByteArrayInputStream(ary);
 		Tuple e2 = KryoObjectDecoder.streamToEvent(Event.class, stream);
 
-		assertEquals(e1.getEventId(), e2.getEventId());
+		assertEquals(e1.getTupleId(), e2.getTupleId());
 	}
 
 }

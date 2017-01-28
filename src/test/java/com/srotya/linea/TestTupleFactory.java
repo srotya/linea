@@ -15,26 +15,27 @@
  */
 package com.srotya.linea;
 
-import com.lmax.disruptor.EventFactory;
-
 /**
- * Factory blueprint to build {@link Tuple}s
+ * Test {@link TupleFactory} to be used in unit tests
  * 
  * @author ambud
  */
-public interface TupleFactory<E extends Tuple> extends EventFactory<E>{
-	
-	/**
-	 * Build Event object
-	 * @return event
-	 */
-	public E buildTuple();
-	
-	/**
-	 * Build and return event object with supplied eventId
-	 * @param eventId
-	 * @return
-	 */
-	public E buildTuple(String eventId);
+public class TestTupleFactory implements TupleFactory<TestTuple> {
+
+
+	@Override
+	public TestTuple newInstance() {
+		return new TestTuple();
+	}
+
+	@Override
+	public TestTuple buildTuple() {
+		return new TestTuple();
+	}
+
+	@Override
+	public TestTuple buildTuple(String tupleId) {
+		return new TestTuple(tupleId);
+	}
 	
 }

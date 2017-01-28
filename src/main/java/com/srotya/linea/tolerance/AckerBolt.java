@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
+import com.srotya.linea.Collector;
 import com.srotya.linea.Tuple;
 import com.srotya.linea.disruptor.ROUTING_TYPE;
 import com.srotya.linea.processors.Bolt;
@@ -91,8 +92,8 @@ public class AckerBolt<E extends Tuple> implements Bolt<E> {
 				// exception; entry was asynchronously acked
 			} else {
 				// notify source
-				E event = collector.getFactory().buildEvent();
-				event.setOriginEventId(entry.getKey());
+				E event = collector.getFactory().buildTuple();
+				event.setOriginTupleId(entry.getKey());
 				event.setGroupByKey(entry.getKey());
 				event.setAck(true);
 				collector.emitDirect(entry.getValue().getSourceSpout(), entry.getValue().getSourceTaskId(), event);
@@ -135,8 +136,8 @@ public class AckerBolt<E extends Tuple> implements Bolt<E> {
 				ackerMap.remove(sourceId);
 
 				// notify source that event's completely processed
-				E event = collector.getFactory().buildEvent();
-				event.setOriginEventId(sourceId);
+				E event = collector.getFactory().buildTuple();
+				event.setOriginTupleId(sourceId);
 				event.setGroupByKey(sourceId);
 				event.setAck(true);
 				collector.emitDirect(trackerValue.getSourceSpout(), trackerValue.getSourceTaskId(), event);
@@ -198,11 +199,22 @@ public class AckerBolt<E extends Tuple> implements Bolt<E> {
 		public String toString() {
 			return buckets.toString();
 		}
+		
+		public int size() {
+			return buckets.size();
+		}
 
 	}
 
 	@Override
 	public void ready() {
+	}
+	
+	/**
+	 * @return ackerMap
+	 */
+	protected RotatingMap<Long, AckerEntry> getAckerMap() {
+		return ackerMap;
 	}
 
 }

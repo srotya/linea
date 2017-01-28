@@ -28,12 +28,12 @@ public class EventFactory implements TupleFactory<BatchEvent> {
 	}
 
 	@Override
-	public BatchEvent buildEvent() {
+	public BatchEvent buildTuple() {
 		return new BatchEvent();
 	}
 
 	@Override
-	public BatchEvent buildEvent(String eventId) {
+	public BatchEvent buildTuple(String eventId) {
 		return new BatchEvent(eventId);
 	}
 

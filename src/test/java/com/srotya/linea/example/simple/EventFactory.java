@@ -28,12 +28,12 @@ public class EventFactory implements TupleFactory<Event> {
 	}
 
 	@Override
-	public Event buildEvent() {
+	public Event buildTuple() {
 		return new Event();
 	}
 
 	@Override
-	public Event buildEvent(String eventId) {
+	public Event buildTuple(String eventId) {
 		return new Event(eventId);
 	}
 

@@ -15,47 +15,21 @@
  */
 package com.srotya.linea;
 
-import java.io.Serializable;
-
 /**
- * Mutable short for hash value edits
+ * Test {@link Tuple} to be used in unit tests
  * 
  * @author ambud
  */
-public class MutableShort implements Serializable {
+public class TestTuple extends AbstractTuple {
 
-	private static final long serialVersionUID = 1L;
-	
-	private short val;
-	
-	public MutableShort() {
+	public static final int AVG_EVENT_FIELD_COUNT = Integer.parseInt(System.getProperty("event.field.count", "40"));
+
+	public TestTuple(String eventId) {
+		super(eventId);
 	}
 	
-	public MutableShort(short val) {
-		this.val = val;
-	}
-	
-	public short incrementAndGet() {
-		return ++val;
+	public TestTuple() {
+		super();
 	}
 
-	/**
-	 * @return the val
-	 */
-	public short getVal() {
-		return val;
-	}
-
-	/**
-	 * @param val the val to set
-	 */
-	public void setVal(short val) {
-		this.val = val;
-	}
-	
-	@Override
-	public String toString() {
-		return String.valueOf(val);
-	}
-	
 }

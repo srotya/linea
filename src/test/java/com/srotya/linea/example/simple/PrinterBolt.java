@@ -17,9 +17,9 @@ package com.srotya.linea.example.simple;
 
 import java.util.Map;
 
+import com.srotya.linea.Collector;
 import com.srotya.linea.disruptor.ROUTING_TYPE;
 import com.srotya.linea.processors.Bolt;
-import com.srotya.linea.tolerance.Collector;
 
 /**
  * @author ambud

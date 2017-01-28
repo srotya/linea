@@ -33,12 +33,12 @@ import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
+import com.srotya.linea.Collector;
 import com.srotya.linea.Tuple;
 import com.srotya.linea.TupleFactory;
 import com.srotya.linea.clustering.Columbus;
 import com.srotya.linea.disruptor.CopyTranslator;
 import com.srotya.linea.network.Router;
-import com.srotya.linea.tolerance.Collector;
 
 /**
  * {@link Bolt} Executor is wrapper that instantiates and executes bolt code.

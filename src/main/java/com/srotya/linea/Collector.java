@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.srotya.linea.tolerance;
+package com.srotya.linea;
 
-import com.srotya.linea.Tuple;
-import com.srotya.linea.TupleFactory;
 import com.srotya.linea.network.Router;
+import com.srotya.linea.tolerance.AckerBolt;
 
 /**
  * A collector is responsible for gather events and acks that need to
@@ -40,6 +39,7 @@ public class Collector<E extends Tuple> {
 	private TupleFactory<E> factory;
 	private Router<E> router;
 	private int workerId;
+	private int parallelism;
 
 	/**
 	 * @param factory
@@ -52,17 +52,18 @@ public class Collector<E extends Tuple> {
 		this.router = router;
 		this.lComponentId = lComponentId;
 		this.lTaskId = taskId;
+		this.parallelism = parallelism;
 		this.workerId = router.getSelfWorkerId();
 	}
 
 	/**
 	 * Ack event
 	 * 
-	 * @param event
+	 * @param tuple
 	 */
-	public void ack(E event) {
-		for (Long sourceEventId : event.getSourceIds()) {
-			ack(lComponentId, sourceEventId, event.getEventId(), lTaskId);
+	public void ack(E tuple) {
+		for (Long sourceTupleId : tuple.getSourceIds()) {
+			ack(lComponentId, sourceTupleId, tuple.getTupleId(), lTaskId);
 		}
 	}
 
@@ -70,19 +71,20 @@ public class Collector<E extends Tuple> {
 	 * Collector internal ack method.
 	 * 
 	 * @param spoutName
-	 * @param sourceEventId
-	 * @param currentEventId
+	 * @param sourceTupleId
+	 * @param currentTupleId
 	 * @param taskId
 	 */
-	protected void ack(String spoutName, long sourceEventId, long currentEventId, int taskId) {
-		E event = factory.buildEvent();
-		event.setOriginEventId(sourceEventId);
-		event.setAck(true); // for debug purposes
-		event.setGroupByKey(sourceEventId);
-		event.setGroupByValue(currentEventId);
-		event.setComponentName(spoutName);
-		event.setTaskId(taskId);
-		router.routeEvent(AckerBolt.ACKER_BOLT_NAME, event);
+	protected void ack(String spoutName, long sourceTupleId, long currentTupleId, int taskId) {
+		E ackTuple = factory.buildTuple();
+		ackTuple.setOriginTupleId(sourceTupleId);
+		ackTuple.setAck(true); // for debug purposes
+		ackTuple.setGroupByKey(sourceTupleId);
+		ackTuple.setGroupByValue(currentTupleId);
+		ackTuple.setComponentName(spoutName);
+		ackTuple.setTaskId(taskId);
+		ackTuple.setNextBoltId(AckerBolt.ACKER_BOLT_NAME);
+		router.routeTuple(ackTuple);
 	}
 
 	/**
@@ -91,14 +93,14 @@ public class Collector<E extends Tuple> {
 	 * as a tuple tree Storm)
 	 * 
 	 * @param nextProcessorId
-	 * @param event
+	 * @param tuple
 	 */
-	public void spoutEmit(String nextProcessorId, E event) {
-		event.setComponentName(lComponentId);
-		event.setTaskId(lTaskId);
-		event.setOriginEventId(event.getEventId());
-		event.setSourceWorkerId(workerId);
-		emit(nextProcessorId, event, event);
+	public void spoutEmit(String nextProcessorId, E tuple) {
+		tuple.setComponentName(lComponentId);
+		tuple.setTaskId(lTaskId);
+		tuple.setOriginTupleId(tuple.getTupleId());
+		tuple.setSourceWorkerId(workerId);
+		emit(nextProcessorId, tuple, tuple);
 	}
 
 	/**
@@ -106,31 +108,33 @@ public class Collector<E extends Tuple> {
 	 * {@link Router}'s destination calculation logic. (To be used with extreme
 	 * care)
 	 * 
-	 * @param nextProcessor
+	 * @param nextBolt
 	 * @param destinationTaskId
-	 * @param event
+	 * @param tuple
 	 */
-	public void emitDirect(String nextProcessor, int destinationTaskId, E event) {
-		event.setTaskId(lTaskId);
-		event.setComponentName(lComponentId);
-		router.routeToTaskId(nextProcessor, event, null, destinationTaskId);
+	public void emitDirect(String nextBolt, int destinationTaskId, E tuple) {
+		tuple.setTaskId(lTaskId);
+		tuple.setComponentName(lComponentId);
+		tuple.setNextBoltId(nextBolt);
+		router.routeToTaskId(tuple, null, destinationTaskId);
 	}
 
 	/**
 	 * Internally used for Spout {@link Tuple} emission.
 	 * 
 	 * @param nextProcessorId
-	 * @param outputEvent
-	 * @param anchorEvent
+	 * @param outputTuple
+	 * @param anchorTuple
 	 */
-	public void emit(String nextProcessorId, E outputEvent, E anchorEvent) {
-		outputEvent.setOriginEventId(anchorEvent.getOriginEventId());
-		outputEvent.getSourceIds().add(anchorEvent.getOriginEventId());
-		outputEvent.setTaskId(lTaskId);
-		outputEvent.setComponentName(lComponentId);
-		ack(anchorEvent.getComponentName(), anchorEvent.getOriginEventId(), outputEvent.getEventId(),
-				anchorEvent.getTaskId());
-		router.routeEvent(nextProcessorId, outputEvent);
+	public void emit(String nextProcessorId, E outputTuple, E anchorTuple) {
+		outputTuple.setOriginTupleId(anchorTuple.getOriginTupleId());
+		outputTuple.getSourceIds().add(anchorTuple.getOriginTupleId());
+		outputTuple.setTaskId(lTaskId);
+		outputTuple.setComponentName(lComponentId);
+		ack(anchorTuple.getComponentName(), anchorTuple.getOriginTupleId(), outputTuple.getTupleId(),
+				anchorTuple.getTaskId());
+		outputTuple.setNextBoltId(nextProcessorId);
+		router.routeTuple(outputTuple);
 	}
 
 	/**
@@ -138,6 +142,41 @@ public class Collector<E extends Tuple> {
 	 */
 	public TupleFactory<E> getFactory() {
 		return factory;
+	}
+
+	/**
+	 * @return the lTaskId
+	 */
+	protected int getlTaskId() {
+		return lTaskId;
+	}
+
+	/**
+	 * @return the lComponentId
+	 */
+	protected String getlComponentId() {
+		return lComponentId;
+	}
+
+	/**
+	 * @return the router
+	 */
+	protected Router<E> getRouter() {
+		return router;
+	}
+
+	/**
+	 * @return the workerId
+	 */
+	protected int getWorkerId() {
+		return workerId;
+	}
+
+	/**
+	 * @return the parallelism
+	 */
+	protected int getParallelism() {
+		return parallelism;
 	}
 
 }

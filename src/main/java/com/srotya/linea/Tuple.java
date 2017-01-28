@@ -28,7 +28,7 @@ public interface Tuple {
 
 	public void setEventId(long eventId);
 
-	public long getEventId();
+	public long getTupleId();
 
 	public Object getGroupByKey();
 
@@ -64,9 +64,9 @@ public interface Tuple {
 
 	public List<Long> getSourceIds();
 
-	public void setOriginEventId(long eventId);
+	public void setOriginTupleId(long eventId);
 
-	public long getOriginEventId();
+	public long getOriginTupleId();
 
 	public void setSourceWorkerId(long workerId);
 

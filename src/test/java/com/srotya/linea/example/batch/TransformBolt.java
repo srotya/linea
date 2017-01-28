@@ -17,9 +17,9 @@ package com.srotya.linea.example.batch;
 
 import java.util.Map;
 
+import com.srotya.linea.Collector;
 import com.srotya.linea.disruptor.ROUTING_TYPE;
 import com.srotya.linea.processors.Bolt;
-import com.srotya.linea.tolerance.Collector;
 
 /**
  * @author ambud
@@ -40,7 +40,7 @@ public class TransformBolt implements Bolt<BatchEvent> {
 
 	@Override
 	public void process(BatchEvent event) {
-		BatchEvent buildEvent = collector.getFactory().buildEvent();
+		BatchEvent buildEvent = collector.getFactory().buildTuple();
 		for (Map<String, Object> entry : event.getBatch()) {
 			buildEvent.getBatch().add(entry);
 			entry.put("fieldtransform", 2231);

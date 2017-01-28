@@ -18,9 +18,9 @@ package com.srotya.linea.processors;
 import java.io.Serializable;
 import java.util.Map;
 
+import com.srotya.linea.Collector;
 import com.srotya.linea.Tuple;
 import com.srotya.linea.disruptor.ROUTING_TYPE;
-import com.srotya.linea.tolerance.Collector;
 
 /**
  * Bolt is custom user defined code for processing {@link Tuple}s. <br>
@@ -41,17 +41,17 @@ public interface Bolt<E extends Tuple> extends Serializable {
 	public void configure(Map<String, String> conf, int instanceId, Collector<E> collector);
 
 	/**
-	 * Method asynchronously called just before events are started and can be
+	 * Method asynchronously called just before tuple are started and can be
 	 * used for long running background operation.
 	 */
 	public void ready();
 
 	/**
-	 * Method called on each Event
+	 * Method called on each {@link Tuple}
 	 * 
-	 * @param event
+	 * @param tuple
 	 */
-	public void process(E event);
+	public void process(E tuple);
 
 	/**
 	 * Type of routing to this bolt i.e. Events processed by this bolt

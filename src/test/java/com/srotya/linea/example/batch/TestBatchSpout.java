@@ -23,8 +23,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.srotya.linea.Collector;
 import com.srotya.linea.processors.Spout;
-import com.srotya.linea.tolerance.Collector;
 
 /**
  * @author ambud
@@ -60,7 +60,7 @@ public class TestBatchSpout extends Spout<BatchEvent> {
 	public void ready() {
 		System.out.println("Running spout:" + taskId);
 		long timestamp = System.currentTimeMillis();
-		BatchEvent event = collector.getFactory().buildEvent(taskId + "_" + 0);
+		BatchEvent event = collector.getFactory().buildTuple(taskId + "_" + 0);
 		for (long i = 0; i < messageCount; i++) {
 			if (Thread.currentThread().isInterrupted()) {
 				break;
@@ -70,9 +70,9 @@ public class TestBatchSpout extends Spout<BatchEvent> {
 			event.getBatch().add(map);
 			if (i % 100 == 0) {
 				event.setGroupByKey("host" + i);
-				emittedEvents.add(event.getEventId());
+				emittedEvents.add(event.getTupleId());
 				collector.spoutEmit("printerBolt", event);
-				event = collector.getFactory().buildEvent(taskId + "_" + i);
+				event = collector.getFactory().buildTuple(taskId + "_" + i);
 			}
 			if (i % 1000000 == 0) {
 				System.err.println("Produced " + i + " events:" + taskId);

@@ -17,9 +17,9 @@ package com.srotya.linea.example.simple;
 
 import java.util.Map;
 
+import com.srotya.linea.Collector;
 import com.srotya.linea.disruptor.ROUTING_TYPE;
 import com.srotya.linea.processors.Bolt;
-import com.srotya.linea.tolerance.Collector;
 
 /**
  * @author ambud
@@ -40,7 +40,7 @@ public class TransformBolt implements Bolt<Event> {
 
 	@Override
 	public void process(Event event) {
-		Event buildEvent = collector.getFactory().buildEvent();
+		Event buildEvent = collector.getFactory().buildTuple();
 		buildEvent.getHeaders().put("fieldtransform", 2231);
 		collector.emit("printerBolt", buildEvent, event);
 		collector.ack(event);
