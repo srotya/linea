@@ -61,9 +61,10 @@ public class TCPServer<E extends Tuple> {
 	public void start() throws Exception {
 		es = Executors.newCachedThreadPool();
 		server = new ServerSocket(dataPort, 10, InetAddress.getByName(bindAddress));
-
+		System.err.println("TCP Server started");
 		while (true) {
 			final Socket socket = server.accept();
+			System.err.println("Connected to client:" + socket.getInetAddress());
 			socket.setReceiveBufferSize(1048576);
 			es.submit(new Thread() {
 				public void run() {
@@ -75,7 +76,6 @@ public class TCPServer<E extends Tuple> {
 							router.directLocalRouteEvent(event.getNextBoltId(), event.getDestinationTaskId(), event);
 						}
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}

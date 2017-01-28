@@ -23,7 +23,6 @@ import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -79,16 +78,6 @@ public class Topology<E extends Tuple> {
 		this.factory = factory;
 		this.translator = translator;
 		this.classOf = classOf;
-		init();
-	}
-
-	public Topology(Properties props, TupleFactory<E> factory, CopyTranslator<E> translator, Class<E> classOf)
-			throws Exception {
-		this.classOf = classOf;
-		conf = new HashMap<>();
-		for (Entry<Object, Object> entry : props.entrySet()) {
-			conf.put(entry.getKey().toString(), entry.getValue().toString());
-		}
 		init();
 	}
 
@@ -214,62 +203,6 @@ public class Topology<E extends Tuple> {
 		// stop router
 		router.stop();
 		return this;
-	}
-
-	/**
-	 * @return factory
-	 */
-	public TupleFactory<E> getFactory() {
-		return factory;
-	}
-
-	/**
-	 * @return router
-	 */
-	public Router<E> getRouter() {
-		return router;
-	}
-
-	/**
-	 * @return the executorMap
-	 */
-	public Map<String, BoltExecutor<E>> getExecutorMap() {
-		return executorMap;
-	}
-
-	/**
-	 * @return the translator
-	 */
-	public CopyTranslator<E> getTranslator() {
-		return translator;
-	}
-
-	/**
-	 * @return the columbus
-	 */
-	public Columbus getColumbus() {
-		return columbus;
-	}
-
-	/**
-	 * @return the workerCount
-	 */
-	public int getWorkerCount() {
-		return workerCount;
-	}
-
-	/**
-	 * @return the ackerCount
-	 */
-	public int getAckerCount() {
-		return ackerCount;
-	}
-
-	/**
-	 * @return the classOf
-	 */
-	public Class<E> getClassOf() {
-		return classOf;
 	}
 
 }

@@ -152,24 +152,10 @@ public class Collector<E extends Tuple> {
 	}
 
 	/**
-	 * @return the lComponentId
-	 */
-	protected String getlComponentId() {
-		return lComponentId;
-	}
-
-	/**
 	 * @return the router
 	 */
 	protected Router<E> getRouter() {
 		return router;
-	}
-
-	/**
-	 * @return the workerId
-	 */
-	protected int getWorkerId() {
-		return workerId;
 	}
 
 	/**

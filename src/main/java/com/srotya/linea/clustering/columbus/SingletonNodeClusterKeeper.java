@@ -16,8 +16,8 @@
 package com.srotya.linea.clustering.columbus;
 
 import java.net.InetAddress;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.srotya.linea.clustering.ClusterKeeper;
 import com.srotya.linea.clustering.WorkerEntry;
@@ -27,9 +27,9 @@ import com.srotya.linea.clustering.WorkerEntry;
  * 
  * @author ambud
  */
-public class SingleNodeClusterKeeper implements ClusterKeeper {
+public class SingletonNodeClusterKeeper implements ClusterKeeper {
 
-	private WorkerEntry entry;
+	private static Map<Integer, WorkerEntry> workerMap = new ConcurrentHashMap<>();
 
 	@Override
 	public void init(Map<String, String> conf, InetAddress address) throws Exception {
@@ -37,15 +37,13 @@ public class SingleNodeClusterKeeper implements ClusterKeeper {
 
 	@Override
 	public int registerWorker(int selfWorkerId, WorkerEntry entry) throws Exception {
-		this.entry = entry;
-		return 0;
+		workerMap.put(selfWorkerId, entry);
+		return selfWorkerId;
 	}
 
 	@Override
 	public Map<Integer, WorkerEntry> pollWorkers() throws Exception {
-		Map<Integer, WorkerEntry> map = new HashMap<>();
-		map.put(0, entry);
-		return map;
+		return workerMap;
 	}
 
 }

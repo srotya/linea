@@ -15,12 +15,8 @@
  */
 package com.srotya.linea.clustering;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,7 +36,7 @@ import com.srotya.linea.Topology;
 public class Columbus implements Runnable {
 
 	public static final String KEEPER_CLASS_FQCN = "linea.keeper.class";
-	private static final String DEFAULT_KEEPER_CLASS = "com.srotya.linea.clustering.columbus.ZookeeperClusterKeeper"; 
+	private static final String DEFAULT_KEEPER_CLASS = "com.srotya.linea.clustering.columbus.ZookeeperClusterKeeper";
 	private static final Logger logger = Logger.getLogger(Columbus.class.getName());
 	private AtomicInteger workerCount = new AtomicInteger(0);
 	private Map<Integer, WorkerEntry> workerMap;
@@ -48,7 +44,6 @@ public class Columbus implements Runnable {
 	private int dataPort;
 	private volatile int selfWorkerId;
 	private ClusterKeeper keeper;
-	private File idCacheFile;
 
 	/**
 	 * @param conf
@@ -62,17 +57,6 @@ public class Columbus implements Runnable {
 		this.workerMap = new ConcurrentHashMap<>();
 
 		this.selfWorkerId = Integer.parseInt(conf.getOrDefault(Topology.WORKER_ID, "-1"));
-		this.idCacheFile = new File("./target/.idCache");
-		// check cache, uses the same logic as
-		// https://issues.apache.org/jira/browse/KAFKA-1070
-		if (selfWorkerId < 0) {
-			if (idCacheFile.exists()) {
-				String workerId = new String(Files.readAllBytes(idCacheFile.toPath()), Charset.forName("utf-8"));
-				if (workerId.length() > 0) {
-					selfWorkerId = Integer.parseInt(workerId);
-				}
-			}
-		}
 
 		String keeperClass = conf.getOrDefault(KEEPER_CLASS_FQCN, DEFAULT_KEEPER_CLASS);
 		try {
@@ -111,6 +95,7 @@ public class Columbus implements Runnable {
 			logger.fine("Updating worker entry for worker id:" + workerId + "\t" + entry.getWorkerAddress());
 			workerMap.get(workerId).setLastContactTimestamp(System.currentTimeMillis());
 		} else {
+			entry.setWorkerId(workerId);
 			workerMap.put(workerId, entry);
 			workerCount.incrementAndGet();
 			logger.fine("Added worker entry for worker id:" + workerId + "\t" + entry.getWorkerAddress());
@@ -129,9 +114,6 @@ public class Columbus implements Runnable {
 					thisWorker.setLastContactTimestamp(System.currentTimeMillis());
 				}
 				selfWorkerId = keeper.registerWorker(selfWorkerId, thisWorker);
-				// update id cache file
-				Files.write(idCacheFile.toPath(), String.valueOf(selfWorkerId).getBytes(), StandardOpenOption.WRITE,
-						StandardOpenOption.CREATE);
 				addKnownPeer(selfWorkerId, thisWorker);
 			} catch (Exception e) {
 				logger.log(Level.SEVERE, "Exception registering worker", e);

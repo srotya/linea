@@ -48,6 +48,7 @@ public class TestSpout extends Spout<Event> {
 		this.taskId = taskId;
 		this.processed = new AtomicBoolean(false);
 		this.collector = collector;
+		TestSimpleTopology.processed.put(taskId, new AtomicBoolean());
 		emittedEvents = Collections.synchronizedSet(new HashSet<>());
 	}
 
@@ -83,7 +84,7 @@ public class TestSpout extends Spout<Event> {
 						"Completed processing " + formatter.format(messageCount) + " events" + "\ttaskid:" + taskId);
 				timestamp = System.currentTimeMillis() - timestamp;
 				System.out.println("Add additional:" + timestamp / 1000 + " seconds for buffer to be processed");
-				TestSimpleTopology.processed.set(true);
+				TestSimpleTopology.processed.get(taskId).set(true);
 				try {
 					Thread.sleep(5000);
 				} catch (InterruptedException e) {

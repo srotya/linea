@@ -37,13 +37,14 @@ import com.srotya.linea.network.KryoObjectEncoder;
  */
 public class TCPClient<E extends Tuple> implements EventHandler<E> {
 
-	private static final Logger logger = Logger.getLogger(TCPClient.class.getName());
 	private Map<Integer, OutputStream> socketMap;
 	private Columbus columbus;
 	private int clientThreads;
 	private int clientThreadId;
+	private Logger logger;
 
 	public TCPClient(Columbus columbus, int clientThreadId, int clientThreads) {
+		this.logger = Logger.getLogger(TCPClient.class.getName() + "\t" + columbus.getSelfWorkerId());
 		this.columbus = columbus;
 		this.clientThreadId = clientThreadId;
 		this.clientThreads = clientThreads;
@@ -102,7 +103,7 @@ public class TCPClient<E extends Tuple> implements EventHandler<E> {
 			}
 		} catch (IOException e) {
 			WorkerEntry entry = columbus.getWorkerMap().get(workerId);
-			logger.severe("Lost worker connection to WorkerId:" + workerId + "\tAddress:" + entry.getWorkerAddress());
+			logger.severe("Lost worker connection to WorkerId:" + workerId + "\tAddress:" + entry);
 			retryConnectLoop(workerId, entry);
 			if (workerId % clientThreads == clientThreadId) {
 				OutputStream stream = socketMap.get(workerId);
