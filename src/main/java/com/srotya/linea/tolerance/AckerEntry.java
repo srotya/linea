@@ -50,24 +50,10 @@ public class AckerEntry implements Serializable {
 	}
 
 	/**
-	 * @param sourceSpout the sourceSpout to set
-	 */
-	public void setSourceSpout(String sourceSpout) {
-		this.sourceSpout = sourceSpout;
-	}
-
-	/**
 	 * @return the sourceTaskId
 	 */
 	public int getSourceTaskId() {
 		return sourceTaskId;
-	}
-
-	/**
-	 * @param sourceTaskId the sourceTaskId to set
-	 */
-	public void setSourceTaskId(int sourceTaskId) {
-		this.sourceTaskId = sourceTaskId;
 	}
 
 	/**

@@ -17,13 +17,10 @@ package com.srotya.linea.network;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.srotya.linea.Tuple;
-import com.srotya.linea.network.nio.TCPServer;
 
 /**
  * Decodes {@link Kryo} Serialized {@link Tuple} objects. This Decoder
@@ -54,43 +51,4 @@ public class KryoObjectDecoder {
 		}
 	}
 	
-	/**
-	 * @param classOf
-	 * @param input
-	 * @return
-	 * @throws IOException
-	 */
-	public static <E> E streamToEvent(Class<E> classOf, Input input) throws IOException {
-		try {
-			E event = TCPServer.kryoThreadLocal.get().readObject(input, classOf);
-			return event;
-		} finally {
-		}
-	}
-
-	/**
-	 * Deserializes {@link List} of {@link Tuple}s from a byte array
-	 * 
-	 * @param classOf
-	 * @param bytes
-	 * @param skip
-	 * @param count
-	 * @return
-	 * @throws IOException
-	 */
-	public static <E> List<E> bytesToEvent(Class<E> classOf, byte[] bytes, int skip, int count) throws IOException {
-		List<E> events = new ArrayList<>();
-		Input input = new Input(bytes);
-		input.skip(skip);
-		try {
-			for (int i = 0; i < count; i++) {
-				E event = TCPServer.kryoThreadLocal.get().readObject(input, classOf);
-				events.add(event);
-			}
-			return events;
-		} finally {
-			input.close();
-		}
-	}
-
 }

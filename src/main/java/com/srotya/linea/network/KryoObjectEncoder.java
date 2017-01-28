@@ -32,18 +32,6 @@ import com.srotya.linea.network.nio.TCPServer;
 public class KryoObjectEncoder {
 	
 	/**
-	 * Kryo serialize {@link Tuple} to {@link OutputStream}
-	 * @param event
-	 * @param stream
-	 * @throws IOException
-	 */
-	public static <E> void writeEventToStream(E event, OutputStream stream) throws IOException {
-		Output output = new Output(stream);
-		TCPServer.kryoThreadLocal.get().writeObject(output, event);
-		output.flush();
-	}
-
-	/**
 	 * Kryo serialize {@link Tuple} to byte array
 	 * @param event serialized as byte array
 	 * @return
