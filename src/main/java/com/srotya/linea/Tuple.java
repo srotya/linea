@@ -68,8 +68,8 @@ public interface Tuple {
 
 	public long getOriginTupleId();
 
-	public void setSourceWorkerId(long workerId);
+	public void setSourceWorkerId(int workerId);
 
-	public long getSourceWorkerId();
+	public int getSourceWorkerId();
 
 }

@@ -15,7 +15,6 @@
  */
 package com.srotya.linea.clustering;
 
-import java.io.Serializable;
 import java.net.InetAddress;
 
 import com.srotya.linea.utils.NetUtils;
@@ -25,17 +24,13 @@ import com.srotya.linea.utils.NetUtils;
  * 
  * @author ambud
  */
-public class WorkerEntry implements Serializable, Comparable<WorkerEntry> {
+public class WorkerEntry implements Comparable<WorkerEntry> {
 
-	private static final long serialVersionUID = 1L;
 	private int workerId;
 	private InetAddress workerAddress;
 	private long lastContactTimestamp;
 	private int dataPort;
 	private boolean qourumEstablished;
-
-	public WorkerEntry() {
-	}
 
 	public WorkerEntry(InetAddress workerAddress, int dataPort, long lastContactTimestamp) {
 		this.workerAddress = workerAddress;
@@ -77,7 +72,7 @@ public class WorkerEntry implements Serializable, Comparable<WorkerEntry> {
 	public boolean equals(Object obj) {
 		if (obj instanceof WorkerEntry) {
 			WorkerEntry param = (WorkerEntry) obj;
-			return workerAddress == param.workerAddress;
+			return workerAddress.equals(param.workerAddress) && dataPort == param.dataPort;
 		}
 		return false;
 	}
@@ -126,13 +121,16 @@ public class WorkerEntry implements Serializable, Comparable<WorkerEntry> {
 	}
 
 	/**
-	 * @param workerId the workerId to set
+	 * @param workerId
+	 *            the workerId to set
 	 */
 	public void setWorkerId(int workerId) {
 		this.workerId = workerId;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

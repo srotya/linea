@@ -16,10 +16,8 @@
 package com.srotya.linea.processors;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -107,14 +105,20 @@ public class BoltExecutor<E extends Tuple> {
 			for (int i = 0; i < parallelism; i++) {
 				int taskId = columbus.getSelfWorkerId() * parallelism + i;
 				Bolt<E> object = deserializeBoltInstance(serializedBoltInstance);
-				object.configure(conf, taskId, new Collector<E>(factory, router, object.getBoltName(), taskId, parallelism));
+				if (object instanceof Spout) {
+					object.configure(conf, taskId,
+							new Collector<E>(factory, router, "Spout" + object.getBoltName(), taskId, parallelism));
+				} else {
+					object.configure(conf, taskId,
+							new Collector<E>(factory, router, object.getBoltName(), taskId, parallelism));
+				}
 				taskProcessorMap.put(taskId, new BoltExecutorWrapper<E>(factory, es, object));
 			}
 			for (Entry<Integer, BoltExecutorWrapper<E>> entry : taskProcessorMap.entrySet()) {
 				entry.getValue().start();
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -148,33 +152,18 @@ public class BoltExecutor<E extends Tuple> {
 	}
 
 	/**
-	 * Serialize {@link Bolt} instance to byte array
-	 * 
-	 * @param boltInstance
-	 * @return byte array
-	 * @throws IOException
-	 */
-	public byte[] serializeBoltInstance(Bolt<E> boltInstance) throws IOException {
-		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		ObjectOutputStream ois = new ObjectOutputStream(stream);
-		ois.writeObject(boltInstance);
-		ois.close();
-		return stream.toByteArray();
-	}
-
-	/**
 	 * Method called by Router
 	 * 
 	 * @param taskId
-	 * @param event
+	 * @param tuple
 	 */
-	public void process(int taskId, E event) {
+	public void process(int taskId, E tuple) {
 		BoltExecutorWrapper<E> wrapper = taskProcessorMap.get(taskId);
 		if (wrapper != null) {
-			wrapper.getBuffer().publishEvent(copyTranslator, event);
+			wrapper.getBuffer().publishEvent(copyTranslator, tuple);
 		} else {
 			logger.severe("Executor not found for:" + taskId + "\t" + columbus.getSelfWorkerId() + "\t"
-					+ taskProcessorMap + "\t" + event);
+					+ taskProcessorMap + "\t" + tuple);
 		}
 	}
 
@@ -190,6 +179,20 @@ public class BoltExecutor<E extends Tuple> {
 	 */
 	public int getParallelism() {
 		return parallelism;
+	}
+
+	/**
+	 * @return the taskProcessorMap
+	 */
+	protected Map<Integer, BoltExecutorWrapper<E>> getTaskProcessorMap() {
+		return taskProcessorMap;
+	}
+
+	/**
+	 * @return the es
+	 */
+	protected ExecutorService getEs() {
+		return es;
 	}
 
 	/**

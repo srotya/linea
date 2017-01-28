@@ -98,8 +98,4 @@ public class AckerEntry implements Serializable {
 		return value == 0;
 	}
 
-	@Override
-	public String toString() {
-		return "{" + value + "," + createTime + "}";
-	}
 }

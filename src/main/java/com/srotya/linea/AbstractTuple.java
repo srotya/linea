@@ -31,7 +31,7 @@ public abstract class AbstractTuple implements Tuple {
 	private long originEventId;
 	private List<Long> sourceIds;
 	private long eventId;
-	private long sourceWorkerId = -1;
+	private int sourceWorkerId = -1;
 	private Object groupByKey;
 	private String nextBoltId;
 	private int destinationTaskId;
@@ -147,12 +147,12 @@ public abstract class AbstractTuple implements Tuple {
 	}
 
 	@Override
-	public void setSourceWorkerId(long workerId) {
+	public void setSourceWorkerId(int workerId) {
 		this.sourceWorkerId = workerId;
 	}
 
 	@Override
-	public long getSourceWorkerId() {
+	public int getSourceWorkerId() {
 		return sourceWorkerId;
 	}
 

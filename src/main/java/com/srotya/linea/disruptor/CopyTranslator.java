@@ -27,23 +27,23 @@ import com.srotya.linea.Tuple;
 public abstract class CopyTranslator<E extends Tuple> implements EventTranslatorOneArg<E, E> {
 	
 	@Override
-	public void translateTo(E outputEvent, long sequence, E inputEvent) {
-		outputEvent.getSourceIds().clear();
-		outputEvent.getSourceIds().addAll(inputEvent.getSourceIds());
-		outputEvent.setEventId(inputEvent.getTupleId());
-		outputEvent.setSourceWorkerId(inputEvent.getSourceWorkerId());
-		outputEvent.setOriginTupleId(inputEvent.getOriginTupleId());
-		outputEvent.setGroupByKey(inputEvent.getGroupByKey());
-		outputEvent.setGroupByValue(inputEvent.getGroupByValue());
-		outputEvent.setNextBoltId(inputEvent.getNextBoltId());
-		outputEvent.setDestinationTaskId(inputEvent.getDestinationTaskId());
-		outputEvent.setTaskId(inputEvent.getTaskId());
-		outputEvent.setDestinationWorkerId(inputEvent.getDestinationWorkerId());
-		outputEvent.setComponentName(inputEvent.getComponentName());
-		outputEvent.setAck(inputEvent.isAck());
-		translate(outputEvent, sequence, inputEvent);
+	public void translateTo(E outputTuple, long sequence, E inputTuple) {
+		outputTuple.getSourceIds().clear();
+		outputTuple.getSourceIds().addAll(inputTuple.getSourceIds());
+		outputTuple.setEventId(inputTuple.getTupleId());
+		outputTuple.setSourceWorkerId(inputTuple.getSourceWorkerId());
+		outputTuple.setOriginTupleId(inputTuple.getOriginTupleId());
+		outputTuple.setGroupByKey(inputTuple.getGroupByKey());
+		outputTuple.setGroupByValue(inputTuple.getGroupByValue());
+		outputTuple.setNextBoltId(inputTuple.getNextBoltId());
+		outputTuple.setDestinationTaskId(inputTuple.getDestinationTaskId());
+		outputTuple.setTaskId(inputTuple.getTaskId());
+		outputTuple.setDestinationWorkerId(inputTuple.getDestinationWorkerId());
+		outputTuple.setComponentName(inputTuple.getComponentName());
+		outputTuple.setAck(inputTuple.isAck());
+		translate(outputTuple, sequence, inputTuple);
 	}
 
-	public abstract void translate(E outputEvent, long sequence, E inputEvent);
+	protected abstract void translate(E outputEvent, long sequence, E inputEvent);
 
 }

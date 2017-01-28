@@ -23,6 +23,7 @@ package com.srotya.linea;
 public class TestTuple extends AbstractTuple {
 
 	public static final int AVG_EVENT_FIELD_COUNT = Integer.parseInt(System.getProperty("event.field.count", "40"));
+	private String field;
 
 	public TestTuple(String eventId) {
 		super(eventId);
@@ -30,6 +31,20 @@ public class TestTuple extends AbstractTuple {
 	
 	public TestTuple() {
 		super();
+	}
+
+	/**
+	 * @return the field
+	 */
+	public String getField() {
+		return field;
+	}
+
+	/**
+	 * @param field the field to set
+	 */
+	public void setField(String field) {
+		this.field = field;
 	}
 
 }

@@ -37,7 +37,6 @@ import com.srotya.linea.processors.Bolt;
  */
 public class AckerBolt<E extends Tuple> implements Bolt<E> {
 
-	private static final Logger logger = Logger.getLogger(AckerBolt.class.getName());
 	private static final int PRINT_COUNT = 100000;
 	private static final long serialVersionUID = 1L;
 	public static final String ACKER_BOLT_NAME = "_acker";
@@ -47,6 +46,7 @@ public class AckerBolt<E extends Tuple> implements Bolt<E> {
 	private transient int taskId;
 	private transient Collector<E> collector;
 	private transient int c;
+	private transient Logger logger;
 
 	public AckerBolt() {
 	}
@@ -55,7 +55,8 @@ public class AckerBolt<E extends Tuple> implements Bolt<E> {
 	public void configure(Map<String, String> conf, int taskId, Collector<E> collector) {
 		this.taskId = taskId;
 		this.collector = collector;
-		ackerMap = new RotatingMap<>(3);
+		this.logger = Logger.getLogger(AckerBolt.class.getName());
+		this.ackerMap = new RotatingMap<>(3);
 	}
 
 	@Override
@@ -199,7 +200,7 @@ public class AckerBolt<E extends Tuple> implements Bolt<E> {
 		public String toString() {
 			return buckets.toString();
 		}
-		
+
 		public int size() {
 			return buckets.size();
 		}
@@ -209,7 +210,7 @@ public class AckerBolt<E extends Tuple> implements Bolt<E> {
 	@Override
 	public void ready() {
 	}
-	
+
 	/**
 	 * @return ackerMap
 	 */

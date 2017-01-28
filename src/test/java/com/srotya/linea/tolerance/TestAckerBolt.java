@@ -32,11 +32,13 @@ import org.mockito.stubbing.Answer;
 import com.srotya.linea.Collector;
 import com.srotya.linea.TestTuple;
 import com.srotya.linea.TestTupleFactory;
+import com.srotya.linea.disruptor.ROUTING_TYPE;
 import com.srotya.linea.network.Router;
 import com.srotya.linea.processors.BoltExecutor;
 
 /**
  * Unit tests for {@link AckerBolt}
+ * 
  * @author ambud
  */
 public class TestAckerBolt {
@@ -59,6 +61,7 @@ public class TestAckerBolt {
 		Collector<TestTuple> collector = new Collector<>(factory, router, AckerBolt.ACKER_BOLT_NAME, 0, 1);
 		bolt.configure(new HashMap<>(), 0, collector);
 		assertEquals(3, bolt.getAckerMap().size());
+		assertEquals(ROUTING_TYPE.GROUPBY, bolt.getRoutingType());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -94,6 +97,14 @@ public class TestAckerBolt {
 		verify(router, times(1)).routeToTaskId(ackEvent.get(), null, 0);
 		assertEquals(0, ackEvent.get().getDestinationTaskId());
 		assertEquals("testSpout", ackEvent.get().getNextBoltId());
+
+		ackTuple = collector.getFactory().buildTuple();
+		ackTuple.setComponentName("test");
+		ackTuple.setGroupByKey(11231231L);
+		ackTuple.setGroupByValue(11231231L);
+
+		bolt.process(ackTuple);
+		assertEquals(null, bolt.getAckerMap().get(11231231L));
 	}
 
 }
