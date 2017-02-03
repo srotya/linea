@@ -31,11 +31,20 @@ import com.srotya.linea.Tuple;
  */
 public class KryoObjectDecoder {
 
+	public static final ThreadLocal<Kryo> kryoThreadLocal = new ThreadLocal<Kryo>() {
+		@Override
+		protected Kryo initialValue() {
+			Kryo kryo = new Kryo();
+			return kryo;
+		}
+	};
+
 	public KryoObjectDecoder() {
 	}
 
 	/**
 	 * Deserialize {@link InputStream} to Event using Kryo
+	 * 
 	 * @param classOf
 	 * @param stream
 	 * @return
@@ -44,11 +53,11 @@ public class KryoObjectDecoder {
 	public static <E> E streamToEvent(Class<E> classOf, InputStream stream) throws IOException {
 		Input input = new Input(stream);
 		try {
-			Kryo kryo = new Kryo();
-			E event = kryo.readObject(input, classOf);// InternalTCPTransportServer.kryoThreadLocal.get().readObject(input, Event.class);
+			E event = kryoThreadLocal.get().readObject(input, classOf);// InternalTCPTransportServer.kryoThreadLocal.get().readObject(input,
+																		// Event.class);
 			return event;
 		} finally {
 		}
 	}
-	
+
 }

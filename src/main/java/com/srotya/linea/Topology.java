@@ -20,7 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
@@ -87,7 +87,7 @@ public class Topology<E extends Tuple> {
 	 * @throws Exception
 	 */
 	protected void init() throws Exception {
-		executorMap = new HashMap<>();
+		executorMap = new LinkedHashMap<>();
 		ackerCount = Integer.parseInt(conf.getOrDefault(ACKER_PARALLELISM, DEFAULT_ACKER_PARALLELISM));
 		columbus = new Columbus(conf);
 		workerCount = Integer.parseInt(conf.getOrDefault(WORKER_COUNT, DEFAULT_ACKER_PARALLELISM));
@@ -184,7 +184,14 @@ public class Topology<E extends Tuple> {
 		router.start();
 		// start each bolt executor
 		for (Entry<String, BoltExecutor<E>> entry : executorMap.entrySet()) {
-			entry.getValue().start();
+			if (!(entry.getValue().getTemplateBoltInstance() instanceof Spout)) {
+				entry.getValue().start();
+			}
+		}
+		for (Entry<String, BoltExecutor<E>> entry : executorMap.entrySet()) {
+			if (entry.getValue().getTemplateBoltInstance() instanceof Spout) {
+				entry.getValue().start();
+			}
 		}
 		return this;
 	}

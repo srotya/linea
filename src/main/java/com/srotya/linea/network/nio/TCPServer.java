@@ -24,56 +24,44 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.srotya.linea.Tuple;
 import com.srotya.linea.network.KryoObjectDecoder;
-import com.srotya.linea.network.Router;
+import com.srotya.linea.network.NetworkServer;
 
 /**
  * Inter Worker Communication (IWC) server.
  * 
  * @author ambud
  */
-public class TCPServer<E extends Tuple> {
+public class TCPServer<E extends Tuple> extends NetworkServer<E> {
 
 	private ServerSocket server;
 	private ExecutorService es;
-	private Router<E> router;
-	private int dataPort;
-	private String bindAddress;
-	private Class<E> classOf;
-	public static final ThreadLocal<Kryo> kryoThreadLocal = new ThreadLocal<Kryo>() {
-		@Override
-		protected Kryo initialValue() {
-			Kryo kryo = new Kryo();
-			return kryo;
-		}
-	};
 
-	public TCPServer(Class<E> classOf, Router<E> router, String bindAddress, int dataPort) {
-		this.classOf = classOf;
-		this.router = router;
-		this.bindAddress = bindAddress;
-		this.dataPort = dataPort;
+	public TCPServer() {
 	}
 
 	public void start() throws Exception {
-		es = Executors.newCachedThreadPool();
-		server = new ServerSocket(dataPort, 10, InetAddress.getByName(bindAddress));
+		es = Executors.newFixedThreadPool(getColumbus().getWorkerCount());
+		server = new ServerSocket(getDataPort(), 100, InetAddress.getByName(getBindAddress()));
 		System.err.println("TCP Server started");
 		while (true) {
+			if (Thread.currentThread().isInterrupted()) {
+				break;
+			}
 			final Socket socket = server.accept();
 			System.err.println("Connected to client:" + socket.getInetAddress());
-			socket.setReceiveBufferSize(1048576);
+			socket.setReceiveBufferSize(8192 * 4);
 			es.submit(new Thread() {
 				public void run() {
 					try {
 						InputStream stream = new BufferedInputStream(socket.getInputStream(), 4096);
 						Input input = new Input(stream);
 						while (true) {
-							E event = KryoObjectDecoder.streamToEvent(classOf, input);
-							router.directLocalRouteEvent(event.getNextBoltId(), event.getDestinationTaskId(), event);
+							E event = KryoObjectDecoder.streamToEvent(getClassOf(), input);
+							getRouter().directLocalRouteEvent(event.getNextBoltId(), event.getDestinationTaskId(),
+									event);
 						}
 					} catch (IOException e) {
 						e.printStackTrace();

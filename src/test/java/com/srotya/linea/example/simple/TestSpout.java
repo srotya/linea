@@ -87,6 +87,7 @@ public class TestSpout extends Spout<Event> {
 				TestSimpleTopology.processed.get(taskId).set(true);
 				try {
 					Thread.sleep(5000);
+					System.exit(0);
 				} catch (InterruptedException e) {
 					break;
 				}

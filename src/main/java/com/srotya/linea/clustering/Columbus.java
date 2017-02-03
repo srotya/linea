@@ -113,6 +113,7 @@ public class Columbus implements Runnable {
 				} else {
 					thisWorker.setLastContactTimestamp(System.currentTimeMillis());
 				}
+				thisWorker.setWorkerId(selfWorkerId);
 				selfWorkerId = keeper.registerWorker(selfWorkerId, thisWorker);
 				addKnownPeer(selfWorkerId, thisWorker);
 			} catch (Exception e) {

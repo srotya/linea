@@ -26,12 +26,14 @@ import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
-import com.srotya.linea.Tuple;
 import com.srotya.linea.MurmurHash;
 import com.srotya.linea.Topology;
+import com.srotya.linea.Tuple;
 import com.srotya.linea.clustering.Columbus;
 import com.srotya.linea.disruptor.CopyTranslator;
 import com.srotya.linea.disruptor.ROUTING_TYPE;
+import com.srotya.linea.network.netty.NettyClient;
+import com.srotya.linea.network.netty.NettyServer;
 import com.srotya.linea.network.nio.TCPClient;
 import com.srotya.linea.network.nio.TCPServer;
 import com.srotya.linea.processors.BoltExecutor;
@@ -50,15 +52,16 @@ public class Router<E extends Tuple> {
 	private Map<String, BoltExecutor<E>> executorMap;
 	private CopyTranslator<E> translator;
 	private Columbus columbus;
-	private TCPServer<E> server;
+	private NetworkServer<E> server;
 	private int workerCount;
 	private ExecutorService pool;
 	private int dataPort;
-	// private TCPClient client;
-	private List<TCPClient<E>> clients;
+	private List<NetworkClient<E>> clients;
 	private String bindAddress;
 	private int clientThreadCount;
 	private Class<E> classOf;
+	private String networkServerClass;
+	private String networkClientClass;
 
 	/**
 	 * @param classOf
@@ -77,6 +80,17 @@ public class Router<E extends Tuple> {
 		this.workerCount = workerCount;
 		this.executorMap = executorMap;
 		this.translator = translator;
+		this.networkServerClass = conf.getOrDefault("network.server.class", NettyServer.class.getName());
+		this.networkClientClass = conf.getOrDefault("network.client.class", NettyClient.class.getName());
+
+		this.networkServerClass = conf.getOrDefault("network.server.class", TCPServer.class.getName());
+		this.networkClientClass = conf.getOrDefault("network.client.class", TCPClient.class.getName());
+
+		// this.networkServerClass = conf.getOrDefault("network.server.class",
+		// NettyServer.class.getName());
+		// this.networkClientClass = conf.getOrDefault("network.client.class",
+		// NettyClient.class.getName());
+
 		this.bindAddress = conf.getOrDefault(Topology.WORKER_BIND_ADDRESS, Topology.DEFAULT_BIND_ADDRESS);
 		this.dataPort = Integer.parseInt(conf.getOrDefault(Topology.WORKER_DATA_PORT, Topology.DEFAULT_DATA_PORT));
 		this.clientThreadCount = Integer.parseInt(conf.getOrDefault(Topology.CLIENT_THREAD_COUNT, "1"));
@@ -89,8 +103,18 @@ public class Router<E extends Tuple> {
 	 */
 	@SuppressWarnings("unchecked")
 	public void start() throws Exception {
+		while (columbus.getWorkerCount() < workerCount) {
+			Thread.sleep(2000);
+			logger.info("Waiting for worker discovery");
+		}
+		
 		pool = Executors.newFixedThreadPool(1 + clientThreadCount);
-		server = new TCPServer<E>(classOf, this, bindAddress, dataPort);
+		server = (NetworkServer<E>) Class.forName(networkServerClass).newInstance();
+		server.setBindAddress(bindAddress);
+		server.setDataPort(dataPort);
+		server.setClassOf(classOf);
+		server.setRouter(this);
+		server.setColumbus(getColumbus());
 		pool.submit(() -> {
 			try {
 				server.start();
@@ -99,20 +123,18 @@ public class Router<E extends Tuple> {
 			}
 		});
 
-		while (columbus.getWorkerCount() < workerCount) {
-			Thread.sleep(2000);
-			logger.info("Waiting for worker discovery");
-		}
-
 		networkTranmissionDisruptor = new Disruptor<E>(factory, 1024 * 8, pool, ProducerType.MULTI,
 				new YieldingWaitStrategy());
 		clients = new ArrayList<>(clientThreadCount);
 		for (int i = 0; i < clientThreadCount; i++) {
-			TCPClient<E> client = new TCPClient<E>(getColumbus(), i, clientThreadCount);
+			NetworkClient<E> client = (NetworkClient<E>) Class.forName(networkClientClass).newInstance();
+			client.setColumbus(getColumbus());
+			client.setClientThreads(clientThreadCount);
+			client.setClientThreadId(i);
 			client.start();
 			clients.add(client);
 		}
-		networkTranmissionDisruptor.handleEventsWith(clients.toArray(new TCPClient[1]));
+		networkTranmissionDisruptor.handleEventsWith(clients.toArray(new NetworkClient[1]));
 		networkTranmissionDisruptor.start();
 	}
 

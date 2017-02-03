@@ -22,7 +22,6 @@ import java.io.OutputStream;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 import com.srotya.linea.Tuple;
-import com.srotya.linea.network.nio.TCPServer;
 
 /**
  * {@link Kryo} serializes {@link Tuple} for Netty transmission
@@ -41,7 +40,7 @@ public class KryoObjectEncoder {
 		ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
 		OutputStream os = bos;
 		Output output = new Output(os);
-		TCPServer.kryoThreadLocal.get().writeObject(output, event);
+		KryoObjectDecoder.kryoThreadLocal.get().writeObject(output, event);
 		output.close();
 		return bos.toByteArray();
 	}
