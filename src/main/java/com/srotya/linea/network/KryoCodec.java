@@ -15,11 +15,14 @@
  */
 package com.srotya.linea.network;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.srotya.linea.Tuple;
 
 /**
@@ -29,7 +32,7 @@ import com.srotya.linea.Tuple;
  * 
  * @author ambud
  */
-public class KryoObjectDecoder {
+public class KryoCodec {
 
 	public static final ThreadLocal<Kryo> kryoThreadLocal = new ThreadLocal<Kryo>() {
 		@Override
@@ -39,7 +42,24 @@ public class KryoObjectDecoder {
 		}
 	};
 
-	public KryoObjectDecoder() {
+	public KryoCodec() {
+	}
+
+	/**
+	 * Kryo serialize {@link Tuple} to byte array
+	 * 
+	 * @param event
+	 *            serialized as byte array
+	 * @return
+	 * @throws IOException
+	 */
+	public static <E> byte[] eventToByteArray(E event) throws IOException {
+		ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
+		OutputStream os = bos;
+		Output output = new Output(os);
+		kryoThreadLocal.get().writeObject(output, event);
+		output.close();
+		return bos.toByteArray();
 	}
 
 	/**
@@ -50,14 +70,9 @@ public class KryoObjectDecoder {
 	 * @return
 	 * @throws IOException
 	 */
-	public static <E> E streamToEvent(Class<E> classOf, InputStream stream) throws IOException {
-		Input input = new Input(stream);
-		try {
-			E event = kryoThreadLocal.get().readObject(input, classOf);// InternalTCPTransportServer.kryoThreadLocal.get().readObject(input,
-																		// Event.class);
-			return event;
-		} finally {
-		}
+	public static <E> E streamToEvent(Class<E> classOf, Input input) throws IOException {
+		E event = kryoThreadLocal.get().readObject(input, classOf);
+		return event;
 	}
 
 }

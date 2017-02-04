@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 
 import com.srotya.linea.Tuple;
 import com.srotya.linea.clustering.WorkerEntry;
-import com.srotya.linea.network.KryoObjectEncoder;
+import com.srotya.linea.network.KryoCodec;
 import com.srotya.linea.network.NetworkClient;
 
 /**
@@ -88,20 +88,18 @@ public class TCPClient<E extends Tuple> extends NetworkClient<E> {
 		try {
 			if (workerId % getClientThreads() == getClientThreadId()) {
 				OutputStream stream = socketMap.get(workerId);
-				byte[] bytes = KryoObjectEncoder.eventToByteArray(event);
+				byte[] bytes = KryoCodec.eventToByteArray(event);
 				stream.write(bytes);
-				if (endOfBatch) {
-					stream.flush();
-				}
+				stream.flush();
 			}
-		} catch (IOException e) {
+		} catch (Exception e) {
 			WorkerEntry entry = getColumbus().getWorkerMap().get(workerId);
 			logger.severe("Lost worker connection to WorkerId:" + workerId + "\tAddress:" + entry + "\treason:"
 					+ e.getMessage());
 			retryConnectLoop(workerId, entry);
 			if (workerId % getClientThreads() == getClientThreadId()) {
 				OutputStream stream = socketMap.get(workerId);
-				byte[] bytes = KryoObjectEncoder.eventToByteArray(event);
+				byte[] bytes = KryoCodec.eventToByteArray(event);
 				stream.write(bytes);
 				if (endOfBatch) {
 					stream.flush();

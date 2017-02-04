@@ -120,7 +120,7 @@ public class AckerBolt<E extends Tuple> implements Bolt<E> {
 		if (trackerValue == null) {
 			if (!source.contains("Spout")) {
 				// reject message
-				logger.fine("Incorrect event ordering:" + sourceId + "\t" + source + "\t" + "\t" + taskId);
+				logger.info("Incorrect event ordering:" + sourceId + "\t" + source + "\t" + "\t" + taskId);
 				return;
 			}
 			// this is the first time we are seeing this event

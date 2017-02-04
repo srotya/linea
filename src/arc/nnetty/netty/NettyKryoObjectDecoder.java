@@ -35,11 +35,11 @@ import io.netty.handler.codec.ByteToMessageDecoder;
  * 
  * @author ambud
  */
-public class KryoObjectDecoder<E extends Tuple> extends ByteToMessageDecoder {
+public class NettyKryoObjectDecoder<E extends Tuple> extends ByteToMessageDecoder {
 
 	private Class<E> classOf;
 
-	public KryoObjectDecoder(Class<E> classOf) {
+	public NettyKryoObjectDecoder(Class<E> classOf) {
 		this.classOf = classOf;
 	}
 

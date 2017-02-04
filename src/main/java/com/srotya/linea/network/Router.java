@@ -32,8 +32,6 @@ import com.srotya.linea.Tuple;
 import com.srotya.linea.clustering.Columbus;
 import com.srotya.linea.disruptor.CopyTranslator;
 import com.srotya.linea.disruptor.ROUTING_TYPE;
-import com.srotya.linea.network.netty.NettyClient;
-import com.srotya.linea.network.netty.NettyServer;
 import com.srotya.linea.network.nio.TCPClient;
 import com.srotya.linea.network.nio.TCPServer;
 import com.srotya.linea.processors.BoltExecutor;
@@ -80,8 +78,6 @@ public class Router<E extends Tuple> {
 		this.workerCount = workerCount;
 		this.executorMap = executorMap;
 		this.translator = translator;
-		this.networkServerClass = conf.getOrDefault("network.server.class", NettyServer.class.getName());
-		this.networkClientClass = conf.getOrDefault("network.client.class", NettyClient.class.getName());
 
 		this.networkServerClass = conf.getOrDefault("network.server.class", TCPServer.class.getName());
 		this.networkClientClass = conf.getOrDefault("network.client.class", TCPClient.class.getName());

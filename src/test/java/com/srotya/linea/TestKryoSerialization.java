@@ -15,21 +15,22 @@
  */
 package com.srotya.linea;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
 
 import org.junit.Test;
 
-import com.srotya.linea.Tuple;
+import com.esotericsoftware.kryo.io.Input;
 import com.srotya.linea.example.simple.Event;
-import com.srotya.linea.network.KryoObjectDecoder;
-import com.srotya.linea.network.KryoObjectEncoder;
+import com.srotya.linea.network.KryoCodec;
 
 /**
  * @author ambud
  */
 public class TestKryoSerialization {
+	
+	private static final Class<Event> CLS = Event.class;
 
 	@Test
 	public void testSerializationSize() throws Exception {
@@ -38,9 +39,9 @@ public class TestKryoSerialization {
 		event.getHeaders().put("message",
 				"ix-dc9-19.ix.netcom.com - - [04/Sep/1995:00:00:28 -0400] \"GET /html/cgi.html HTTP/1.0\" 200 2217\r\n");
 		event.getHeaders().put("value", 10);
-		byte[] ary = KryoObjectEncoder.eventToByteArray(event);
+		byte[] ary = KryoCodec.eventToByteArray(event);
 		System.out.println("Without Compression Array Length:" + ary.length);
-		ary = KryoObjectEncoder.eventToByteArray(event);
+		ary = KryoCodec.eventToByteArray(event);
 		System.out.println("With Compression Array Length:" + ary.length);
 	}
 
@@ -51,12 +52,12 @@ public class TestKryoSerialization {
 		e1.getHeaders().put("message",
 				"ix-dc9-19.ix.netcom.com - - [04/Sep/1995:00:00:28 -0400] \"GET /html/cgi.html HTTP/1.0\" 200 2217\r\n");
 		e1.getHeaders().put("value", 10);
-		byte[] ary = KryoObjectEncoder.eventToByteArray(e1);
+		byte[] ary = KryoCodec.eventToByteArray(e1);
 
 		ByteArrayInputStream stream = new ByteArrayInputStream(ary);
-		Tuple e2 = KryoObjectDecoder.streamToEvent(Event.class, stream);
+		Tuple e2 = KryoCodec.streamToEvent(CLS, new Input(stream));
 
-		assertEquals(e1.getTupleId(), e2.getTupleId());
+		assertEquals(e1, e2);
 	}
 
 }

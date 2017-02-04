@@ -175,5 +175,14 @@ public abstract class AbstractTuple implements Tuple {
 	public void setEventId(long eventId) {
 		this.eventId = eventId;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if(obj instanceof AbstractTuple) {
+			AbstractTuple tup = ((AbstractTuple)obj);
+			return eventId == tup.eventId;
+		}
+		return false;
+	}
 
 }

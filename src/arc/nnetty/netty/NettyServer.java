@@ -59,7 +59,7 @@ public class NettyServer<E extends Tuple> extends NetworkServer<E> {
 						@Override
 						public void initChannel(SocketChannel ch) throws Exception {
 							ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(4096, 0, 2, 0, 2))
-									.addLast(new KryoObjectDecoder<E>(getClassOf()))
+									.addLast(new NettyKryoObjectDecoder<E>(getClassOf()))
 									.addLast(e2, new IWCHandler<>(getRouter()));
 						}
 					}).option(ChannelOption.SO_BACKLOG, 128) // (5)

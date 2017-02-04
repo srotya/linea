@@ -26,7 +26,7 @@ import java.util.concurrent.Executors;
 
 import com.esotericsoftware.kryo.io.Input;
 import com.srotya.linea.Tuple;
-import com.srotya.linea.network.KryoObjectDecoder;
+import com.srotya.linea.network.KryoCodec;
 import com.srotya.linea.network.NetworkServer;
 
 /**
@@ -47,23 +47,20 @@ public class TCPServer<E extends Tuple> extends NetworkServer<E> {
 		server = new ServerSocket(getDataPort(), 100, InetAddress.getByName(getBindAddress()));
 		System.err.println("TCP Server started");
 		while (true) {
-			if (Thread.currentThread().isInterrupted()) {
-				break;
-			}
 			final Socket socket = server.accept();
-			System.err.println("Connected to client:" + socket.getInetAddress());
-			socket.setReceiveBufferSize(8192 * 4);
+			System.err.println("Connected to client:" + socket.getInetAddress() + getClassOf());
+			socket.setReceiveBufferSize(1024 * 1024);
 			es.submit(new Thread() {
 				public void run() {
 					try {
 						InputStream stream = new BufferedInputStream(socket.getInputStream(), 4096);
 						Input input = new Input(stream);
 						while (true) {
-							E event = KryoObjectDecoder.streamToEvent(getClassOf(), input);
+							E event = KryoCodec.streamToEvent(getClassOf(), input);
 							getRouter().directLocalRouteEvent(event.getNextBoltId(), event.getDestinationTaskId(),
 									event);
 						}
-					} catch (IOException e) {
+					} catch (Exception e) {
 						e.printStackTrace();
 					}
 				}
