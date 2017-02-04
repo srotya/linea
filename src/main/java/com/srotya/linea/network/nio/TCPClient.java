@@ -90,7 +90,9 @@ public class TCPClient<E extends Tuple> extends NetworkClient<E> {
 				OutputStream stream = socketMap.get(workerId);
 				byte[] bytes = KryoCodec.eventToByteArray(event);
 				stream.write(bytes);
-				stream.flush();
+				if (endOfBatch) {
+					stream.flush();
+				}
 			}
 		} catch (Exception e) {
 			WorkerEntry entry = getColumbus().getWorkerMap().get(workerId);

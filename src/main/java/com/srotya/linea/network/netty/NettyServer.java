@@ -32,6 +32,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.bytes.ByteArrayDecoder;
 import io.netty.util.concurrent.DefaultEventExecutor;
 import io.netty.util.concurrent.EventExecutor;
 
@@ -58,7 +59,8 @@ public class NettyServer<E extends Tuple> extends NetworkServer<E> {
 					.childHandler(new ChannelInitializer<SocketChannel>() { // (4)
 						@Override
 						public void initChannel(SocketChannel ch) throws Exception {
-							ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(4096, 0, 2, 0, 2))
+							ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(4096, 0, 4, 0, 4))
+									.addLast(new ByteArrayDecoder())
 									.addLast(new NettyKryoObjectDecoder<E>(getClassOf()))
 									.addLast(e2, new IWCHandler<>(getRouter()));
 						}

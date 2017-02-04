@@ -15,6 +15,7 @@
  */
 package com.srotya.linea.network.netty;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,7 @@ import java.util.List;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.srotya.linea.Tuple;
+import com.srotya.linea.network.KryoCodec;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
@@ -61,7 +63,7 @@ public class NettyKryoObjectDecoder<E extends Tuple> extends ByteToMessageDecode
 		int i = 0;
 		try {
 			for (; i < count; i++) {
-				E event = com.srotya.linea.network.KryoObjectDecoder.kryoThreadLocal.get().readObject(input, classOf);
+				E event = KryoCodec.kryoThreadLocal.get().readObject(input, classOf);
 				events.add(event);
 			}
 			return events;
@@ -73,13 +75,22 @@ public class NettyKryoObjectDecoder<E extends Tuple> extends ByteToMessageDecode
 			input.close();
 		}
 	}
+	
+	public static <E> E bytebufToEvent(Class<E> classOf, ByteBuf in) throws IOException {
+		Input input = new Input(new ByteBufInputStream(in));
+		return KryoCodec.streamToEvent(classOf, input);
+	}
 
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+		System.out.println("Event");
 		if (in == null) {
+			return;
 		}
-		List<E> tuples = bytebufToEvents(classOf, in);
-		out.addAll(tuples);
+//		List<E> tuples = bytebufToEvents(classOf, in);
+//		out.addAll(tuples);
+		E tuple = bytebufToEvent(classOf, in);
+		out.add(tuple);
 	}
 
 }

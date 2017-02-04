@@ -231,6 +231,12 @@ public class BoltExecutor<E extends Tuple> {
 						E tickTuple = factory.buildTuple();
 						tickTuple.setComponentName(Topology.TICK_TUPLE);
 						buffer.publishEvent(copyTranslator, tickTuple);
+						try {
+							Thread.sleep(bolt.tickTupleFrequency());
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+							break;
+						}
 					}
 				}
 			});

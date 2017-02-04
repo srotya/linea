@@ -38,6 +38,7 @@ public class IWCHandler<E extends Tuple> extends SimpleChannelInboundHandler<E> 
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, E msg) throws Exception {
 		E tuple = (E) msg;
+		System.out.println("Event:"+tuple);
 		router.directLocalRouteEvent(tuple.getNextBoltId(), tuple.getDestinationTaskId(), tuple);
 	}
 

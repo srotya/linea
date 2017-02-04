@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 
 import com.srotya.linea.Tuple;
 import com.srotya.linea.clustering.WorkerEntry;
-import com.srotya.linea.network.KryoObjectEncoder;
+import com.srotya.linea.network.KryoCodec;
 import com.srotya.linea.network.NetworkClient;
 
 import io.netty.bootstrap.Bootstrap;
@@ -37,6 +37,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.codec.bytes.ByteArrayEncoder;
 
 /**
  * @author ambud
@@ -85,7 +86,8 @@ public class NettyClient<E extends Tuple> extends NetworkClient<E> {
 							@Override
 							public void initChannel(SocketChannel ch) throws Exception {
 								ChannelPipeline p = ch.pipeline();
-								p.addLast(new LengthFieldPrepender(2));
+								p.addLast(new LengthFieldPrepender(4));
+								p.addLast(new ByteArrayEncoder());
 							}
 						});
 
@@ -110,8 +112,8 @@ public class NettyClient<E extends Tuple> extends NetworkClient<E> {
 		try {
 			if (workerId % getClientThreads() == getClientThreadId()) {
 				Channel channel = channelMap.get(workerId);
-				byte[] ary = KryoObjectEncoder.eventToByteArray(event);
-				channel.write(ary);
+				byte[] ary = KryoCodec.eventToByteArray(event);
+				channel.writeAndFlush(ary);
 				if (endOfBatch) {
 					channel.flush();
 				}
